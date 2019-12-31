@@ -42,6 +42,7 @@ SOURCES += \
     mdbconnection.cpp \
     gametime.cpp \
     gamelistitemmodel.cpp \
+    popuptablemodel.cpp \
     seasontablemodel.cpp \
     tabs/divisiontab.cpp \
     tabs/goalstab.cpp \
@@ -72,6 +73,7 @@ HEADERS += \
         mainwindow.h \
     mdbconnection.h \
     gametime.h \
+    popuptablemodel.h \
     seasontablemodel.h \
     tabs/divisiontab.h \
     tabs/goalstab.h \

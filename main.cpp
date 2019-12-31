@@ -33,6 +33,14 @@ int main(int argc, char *argv[])
     MainWindow w;
     {
         auto ptr = std::make_unique<MDbConnection>("foo", "nhltest");
+        auto game = ptr->get_game(2019020457);
+        auto hTeam = game.home_team();
+        auto aTeam = game.away_team();
+
+        auto shotsHome = game.shots_by(game.get_team_type(hTeam));
+        auto shotsAway = game.shots_by(game.get_team_type(aTeam));
+        std::cout << "Shots home: " << shotsHome << std::endl;
+        std::cout << "Shots away: " << shotsAway << std::endl;
         w.hook_db_connection(std::move(ptr));
     }
     w.show();

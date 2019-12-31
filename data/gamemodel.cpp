@@ -294,15 +294,18 @@ int GameModel::goals_by(GameModel::TeamType t) const
 
 int GameModel::shots_by(GameModel::TeamType t) const
 {
+    auto shots = 0;
     if(t == TeamType::AWAY) {
-        return std::accumulate(m_shots_on_goal.begin(), m_shots_on_goal.end(), 0, [&](auto acc, const auto& period) {
+        shots= std::accumulate(m_shots_on_goal.begin(), m_shots_on_goal.end(), 0, [&](auto acc, const auto& period) {
             return acc + period.away;
         });
     } else {
-        return std::accumulate(m_shots_on_goal.begin(), m_shots_on_goal.end(), 0, [&](auto acc, const auto& period) {
+        shots = std::accumulate(m_shots_on_goal.begin(), m_shots_on_goal.end(), 0, [&](auto acc, const auto& period) {
             return acc + period.home;
         });
     }
+    std::cout << "Shots by in GameModel: " << shots << std::endl;
+    return shots;
 }
 
 int GameModel::shots_period_by(GamePeriod period, GameModel::TeamType t) const

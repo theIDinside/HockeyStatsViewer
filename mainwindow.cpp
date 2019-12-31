@@ -5,6 +5,7 @@
 #include "utils.h"
 #include <QFormLayout>
 #include <QHBoxLayout>
+#include "gamedatapopup.h"
 #include "gamelistitemmodel.h"
 #include "tabs/specialteamtab.h"
 #include <tabs/divisiontab.h>
@@ -106,6 +107,8 @@ void MainWindow::on_mGamesTodayListView_clicked(const QModelIndex &index)
             auto home_games = m_connection->getGames(it->home_team());
             TeamStats ts_away{it->away_team(), std::move(away_games)};
             TeamStats ts_home{it->home_team(), std::move(home_games)};
+            m_home = ts_home;
+            m_away = ts_away;
             emit gameSelectionChanged(ts_home, ts_away); // sending off data to all tabs, so they can update with newly selected team stats
         } else {
             std::cout << "Found no games!! " << retrievedData.toInt() << "."  << std::endl;
@@ -187,6 +190,57 @@ void MainWindow::on_mUpdateCharts_clicked()
 void MainWindow::game_data_popup(int gameID)
 {
     std::cout << "Do: Pop up window for game data for game with id: " << gameID << std::endl;
+    GameDataPopup* popup = new GameDataPopup();
+    // popup->show();
+    auto gInfo = m_connection->get_game_info(gameID);
+    if(!gInfo) throw std::runtime_error{"Could not find a game with provided ID: " + std::to_string(gameID)};
+
+    auto homeTeam = gInfo->home_team();
+    auto awayTeam = gInfo->away_team();
+
+    auto hGames = m_connection->getGames(homeTeam);
+    auto aGames = m_connection->getGames(awayTeam);
+    auto playedGame = m_connection->get_game(gameID);
+
+    TeamStats away{awayTeam, std::move(aGames)};
+    TeamStats home{homeTeam, std::move(hGames)};
+
+    auto TA = away.compare_game_to_trend_stats(playedGame);
+    auto TH = home.compare_game_to_trend_stats(playedGame);
+    auto GSA = GameStatistics::from(awayTeam, playedGame);
+    auto GSH = GameStatistics::from(homeTeam, playedGame);
+
+    TableData homeTable = std::make_pair(ColumnData{
+                                             GSH.pp_efficiency(),
+                                             GSH.pk_efficiency(),
+                                             GSH.m_GF,
+                                             GSH.m_GA,
+                                             GSH.m_SF,
+                                             GSH.m_SA},
+                                         ColumnData{
+                                             TH.m_PP,
+                                             TH.m_PK,
+                                             TH.m_GF,
+                                             TH.m_GA,
+                                             TH.m_SF,
+                                             TH.m_SA});
+    TableData awayTable = std::make_pair(ColumnData{
+                                             GSA.pp_efficiency(),
+                                             GSA.pk_efficiency(),
+                                             GSA.m_GF,
+                                             GSA.m_GA,
+                                             GSA.m_SF,
+                                             GSA.m_SA},
+                                         ColumnData{
+                                             TA.m_PP,
+                                             TA.m_PK,
+                                             TA.m_GF,
+                                             TA.m_GA,
+                                             TA.m_SF,
+                                             TA.m_SA});
+
+    popup->update_table_data_show(m_home.team_name(), m_away.team_name(), homeTable, awayTable);
+    popup->exec();
 }
 
 void MainWindow::show_popup()

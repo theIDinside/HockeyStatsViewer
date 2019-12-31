@@ -53,6 +53,8 @@ private:
     QAction* m_actionSpanSet5;
     QAction* m_actionSpanSet10;
     QAction* m_actionSpanSetSeason;
+    TeamStats m_home;
+    TeamStats m_away;
 
 
     void connectTabSignals();

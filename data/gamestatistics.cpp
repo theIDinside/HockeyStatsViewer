@@ -20,9 +20,11 @@ GameStatistics GameStatistics::from(const std::string& team, const GameModel &gm
     auto gf = gm.goals_by(team_t);
     auto ga = gm.goals_by(gm.get_opponent_team_type(team));
     auto sf = gm.shots_by(team_t);
+    if(sf > 100)
+        std::cout << "Shots by in GameStatistics::from: " << sf << " - Game ID: " << gm.game_id() << std::endl;
+
     auto sa = gm.shots_by(gm.get_opponent_team_type(team));
     auto ppg = gm.pp_goals(team_t);
     auto pkg = gm.pk_letups(team_t);
-
     return GameStatistics{pk, pp, gf, ga, sf, sa, ppg, pkg};
 }

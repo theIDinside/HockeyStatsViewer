@@ -115,7 +115,7 @@ std::vector<double> TeamStats::goals_for_avg(TeamStats::Span span) const
     } else {
         auto [begin, end] = games_range_from_back(span*2 - 1);
         auto _span = static_cast<double>(span);
-        iter::win::accumulate_window(begin, end, static_cast<std::size_t>(span), std::back_inserter(spanAverage), [&](auto& acc, const auto& game) {
+        iter::win::accumulate_windows(begin, end, static_cast<std::size_t>(span), std::back_inserter(spanAverage), [&](auto& acc, const auto& game) {
             return acc + static_cast<double>(game.goals_by(game.get_team_type(m_team))) / _span;
         });
     }
@@ -139,7 +139,7 @@ std::vector<double> TeamStats::goals_against_avg(TeamStats::Span span) const
     } else {
         auto [begin, end] = games_range_from_back(span*2 - 1);
         auto _span = static_cast<double>(span);
-        iter::win::accumulate_window(begin, end, static_cast<std::size_t>(span), std::back_inserter(spanAverage), [&](auto& acc, const auto& game) {
+        iter::win::accumulate_windows(begin, end, static_cast<std::size_t>(span), std::back_inserter(spanAverage), [&](auto& acc, const auto& game) {
             return acc + static_cast<double>(game.goals_by(game.get_opponent_team_type(m_team))) / _span;
         });
     }
@@ -161,7 +161,7 @@ std::vector<double> TeamStats::shots_for_avg(TeamStats::Span span) const
     } else {
         auto [begin, end] = games_range_from_back(span*2 - 1);
         auto _span = static_cast<double>(span);
-        iter::win::accumulate_window(begin, end, static_cast<std::size_t>(span), std::back_inserter(spanAverage), [&](auto& acc, const auto& game) {
+        iter::win::accumulate_windows(begin, end, static_cast<std::size_t>(span), std::back_inserter(spanAverage), [&](auto& acc, const auto& game) {
             return acc + static_cast<double>(game.shots_by(game.get_team_type(m_team))) / _span;
         });
     }
@@ -183,7 +183,7 @@ std::vector<double> TeamStats::shots_against_avg(TeamStats::Span span) const
     } else {
         auto[begin, end] = games_range_from_back(span * 2 - 1);
         auto _span = static_cast<double>(span);
-        iter::win::accumulate_window(begin, end, static_cast<std::size_t>(span), std::back_inserter(spanAverage), [&](auto& acc, const auto& game){
+        iter::win::accumulate_windows(begin, end, static_cast<std::size_t>(span), std::back_inserter(spanAverage), [&](auto& acc, const auto& game){
             return acc + game.shots_by(game.get_opponent_team_type(m_team)) / _span;
         });
     }
@@ -200,7 +200,7 @@ std::vector<double> TeamStats::gf_avg_by_period(TeamStats::Span span, GamePeriod
     } else {
         auto [begin, end] = games_range_from_back(span*2 - 1);
         auto divisor = static_cast<double>(span);
-        iter::win::accumulate_window(begin, end, span, std::back_inserter(gfAverageByPeriod), [&](auto& acc, const GameModel& game) {
+        iter::win::accumulate_windows(begin, end, span, std::back_inserter(gfAverageByPeriod), [&](auto& acc, const GameModel& game) {
             return acc + static_cast<double>(game.goals_period_by(period, game.get_team_type(m_team))) / divisor;
         });
     }
@@ -217,7 +217,7 @@ std::vector<double> TeamStats::ga_avg_by_period(TeamStats::Span span, GamePeriod
     } else {
         auto [begin, end] = games_range_from_back(span*2 - 1);
         auto divisor = static_cast<double>(span);
-        iter::win::accumulate_window(begin, end, span, std::back_inserter(gaAverageByPeriod), [&](auto& acc, const GameModel& game) {
+        iter::win::accumulate_windows(begin, end, span, std::back_inserter(gaAverageByPeriod), [&](auto& acc, const GameModel& game) {
             return acc + static_cast<double>(game.goals_period_by(period, game.get_opponent_team_type(m_team))) / divisor;
         });
     }
@@ -234,7 +234,7 @@ std::vector<double> TeamStats::sf_avg_by_period(TeamStats::Span span, GamePeriod
     } else {
         auto [begin, end] = games_range_from_back(span*2 - 1);
         auto divisor = static_cast<double>(span);
-        iter::win::accumulate_window(begin, end, span, std::back_inserter(sfAverageByPeriod), [&](auto& acc, const GameModel& game) {
+        iter::win::accumulate_windows(begin, end, span, std::back_inserter(sfAverageByPeriod), [&](auto& acc, const GameModel& game) {
             return acc + static_cast<double>(game.shots_period_by(period, game.get_team_type(m_team))) / divisor;
         });
     }
@@ -251,7 +251,7 @@ std::vector<double> TeamStats::sa_avg_by_period(TeamStats::Span span, GamePeriod
     } else {
         auto [begin, end] = games_range_from_back(span*2 - 1);
         auto divisor = static_cast<double>(span);
-        iter::win::accumulate_window(begin, end, span, std::back_inserter(saAverageByPeriod), [&](auto& acc, const GameModel& game) {
+        iter::win::accumulate_windows(begin, end, span, std::back_inserter(saAverageByPeriod), [&](auto& acc, const GameModel& game) {
             return acc + static_cast<double>(game.shots_period_by(period, game.get_opponent_team_type(m_team))) / divisor;
         });
     }
@@ -277,7 +277,7 @@ std::vector<double> TeamStats::pdo_game_average(TeamStats::Span span) const
         auto[begin ,end] = games_range_from_back(span*2 - 1);
         std::vector<double> PDOOverSpan {};
         auto _span = static_cast<double>(span);
-        iter::win::accumulate_window(begin, end, span, std::back_inserter(spanPDO), [&](auto acc, const auto& game){
+        iter::win::accumulate_windows(begin, end, span, std::back_inserter(spanPDO), [&](auto acc, const auto& game){
            return acc + static_cast<double>(game.calculate_pdo(game.get_team_type(m_team))) / _span;
         });
     }
@@ -310,7 +310,7 @@ std::vector<double> TeamStats::pdo(TeamStats::Span span) const
     } else {
         auto[begin ,end] = games_range_from_back(span*2 - 1);
         std::vector<std::tuple<int, int, int, int>> PDOStats{};
-        iter::win::accumulate_window(begin, end, span, std::back_inserter(PDOStats), [&](auto& acc, const auto& game) {
+        iter::win::accumulate_windows(begin, end, span, std::back_inserter(PDOStats), [&](auto& acc, const auto& game) {
             auto& [shotsFor, shotsAgainst, goalsFor, goalsAgainst] = acc;
             auto opponent = game.get_opponent_team_type(m_team);
             auto team = game.get_team_type(m_team);
@@ -380,7 +380,7 @@ std::vector<TeamStats::ResultRatio> TeamStats::special_teams(TeamStats::Span spa
         spanSpecialTeams.push_back(PPSeason);
     } else {
         auto[begin ,end] = games_range_from_back(span*2 - 1);
-        iter::win::accumulate_window(begin, end, static_cast<std::size_t>(span), std::back_inserter(spanSpecialTeams), [&](auto& acc, const auto& game) {
+        iter::win::accumulate_windows(begin, end, static_cast<std::size_t>(span), std::back_inserter(spanSpecialTeams), [&](auto& acc, const auto& game) {
             auto [goals, attempts] = to_pair(game.get_special_teams(game.get_team_type(m_team), sp_type));
             auto& [goalTotals, attemptTotals] = acc;
             goalTotals += goals;
@@ -413,7 +413,7 @@ std::vector<double> TeamStats::times_in_pp_game_average(TeamStats::Span span) co
 
     } else {
         auto[b, e] = games_range_from_back(span*2 - 1);
-        iter::win::accumulate_window(b, e, static_cast<std::size_t>(span), std::back_inserter(spanAverage), [&](auto& acc, const auto& game) {
+        iter::win::accumulate_windows(b, e, static_cast<std::size_t>(span), std::back_inserter(spanAverage), [&](auto& acc, const auto& game) {
             return acc + iter::win::avg(game.pp_attempts(game.get_team_type(m_team)), span);
         });
     }
@@ -428,7 +428,7 @@ std::vector<double> TeamStats::times_in_pk_game_average(TeamStats::Span span) co
 
     } else {
         auto[b, e] = games_range_from_back(span*2 - 1);
-        iter::win::accumulate_window(b, e, static_cast<std::size_t>(span), std::back_inserter(spanAverage), [&](auto& acc, const auto& game) {
+        iter::win::accumulate_windows(b, e, static_cast<std::size_t>(span), std::back_inserter(spanAverage), [&](auto& acc, const auto& game) {
             return acc + iter::win::avg(game.pk_attempts(game.get_team_type(m_team)), span);
         });
     }
@@ -593,8 +593,24 @@ TrendComparison TeamStats::compare_game_to_trend_stats(const GameModel &game) co
         return g.game_id() == game.game_id();
     });
     if(end == m_gamesPlayed.cend()) throw std::runtime_error("Could not find a game with id: " + std::to_string(gameID) + " that " + m_team + " played in");
+    int countGames = end - begin;
+    int itCount = 0;
     auto statsUpUntilGame = std::accumulate(begin, end, TrendComparisonAccumulator{m_team}, [&](auto& acc, const auto& g) {
-
+        itCount++;
+        if(g.shots_by(g.get_team_type(m_team)) > 100) {
+            std::cout << "Game "<< g.game_id() << " << seem to have more than 100 shots, which is strange" << std::endl;
+            auto shots = 0;
+            if(m_team == g.home_team()) {
+                for(const auto& period : g.m_shots_on_goal) {
+                   shots += period.home;
+                }
+            } else {
+                for(const auto& period : g.m_shots_on_goal) {
+                   shots += period.away;
+                }
+            }
+            std::cout << "Total tally of shots: " << shots << std::endl;
+        }
         acc.push_game_stats(GameStatistics::from(m_team, g));
         /*  push_game_stats(GameStatistics&) does this...
         auto teamType = g.get_team_type(acc.team);
@@ -611,6 +627,8 @@ TrendComparison TeamStats::compare_game_to_trend_stats(const GameModel &game) co
         */
         return acc;
     });
+
+    std::cout << "It count was: " << itCount << ". Games Analyzed was supposed to be: " << countGames;
 
     auto gamestats = GameStatistics::from(m_team, game);
 

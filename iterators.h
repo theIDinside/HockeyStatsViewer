@@ -77,7 +77,7 @@ namespace iter::win {
     }
 
     template<typename Container, typename OutputIt, typename RangeFn, typename T = typename OutputIt::container_type::value_type>
-    void window_accumulate(const Container& c, std::size_t window_size, OutputIt out_iterator, RangeFn fn) {
+    void container_window_acc(const Container& c, std::size_t window_size, OutputIt out_iterator, RangeFn fn) {
         assert(window_size <= c.size());
         auto begin = c.cbegin();
         auto container_end = c.cend();
@@ -96,7 +96,7 @@ namespace iter::win {
      * and the element type.
      */
     template<typename Iterator, typename OutputIterator, typename AccumulatorFn, typename T = typename OutputIterator::container_type::value_type>
-    void accumulate_window(Iterator begin, Iterator end, std::size_t window_size, OutputIterator out_iterator, AccumulatorFn acc_fn) {
+    void accumulate_windows(Iterator begin, Iterator end, std::size_t window_size, OutputIterator out_iterator, AccumulatorFn acc_fn) {
         assert(static_cast<unsigned int>(window_size) <= (end - begin));
         auto window_end = begin + window_size;
         for(; window_end <= end; window_end++, begin++) {

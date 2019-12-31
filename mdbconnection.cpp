@@ -14,7 +14,7 @@
 #include <mongocxx/uri.hpp>
 #include <ctime>
 #include <iomanip>
-
+#include <cassert>
 
 using bsoncxx::builder::stream::close_array;
 using bsoncxx::builder::stream::close_document;
@@ -58,6 +58,15 @@ std::vector<GameModel> MDbConnection::getGames(const std::string &teamNameQuery)
         shotsOnGoal.push_back(firstPeriod);
         shotsOnGoal.push_back(secondPeriod);
         shotsOnGoal.push_back(thirdPeriod);
+        auto shotsHome = std::accumulate(shotsOnGoal.begin(), shotsOnGoal.end(), 0, [&](auto& acc, const auto period) {
+           return acc + period.home;
+        });
+        auto shotsAway = std::accumulate(shotsOnGoal.begin(), shotsOnGoal.end(), 0, [&](auto& acc, const auto period) {
+            return acc + period.away;
+        });
+        assert(shotsHome < 100);
+        assert(shotsAway < 100);
+        std::cout << "Shots home/shots away" << shotsHome << "/" << shotsAway << std::endl;
         auto teamWon = d["teamWon"].get_utf8().value.to_string();
         IntResults finalResult{d["finalResult"]["home"].get_int32(), d["finalResult"]["away"].get_int32()};
         IntResults faceOffWins{d["faceOffWins"]["home"].get_int32(), d["faceOffWins"]["away"].get_int32()};
@@ -133,9 +142,89 @@ GameModel MDbConnection::get_game(int gameID)
     auto collection = m_connection[m_dbName]["games"];
     auto query = document{} << "gameID" << gameID << finalize;
     auto cursor = collection.find(query.view());
-    for(auto doc : cursor) {
+    for(auto d : cursor) {
+        auto awayTeam = d["teams"]["away"].get_utf8().value.to_string();
+        auto homeTeam = d["teams"]["home"].get_utf8().value.to_string();
+        auto gmTeams = TeamNames{homeTeam, awayTeam};
+        std::vector<IntResults> shotsOnGoal{};
+        auto periodShots = d["shotsOnGoal"].get_array().value;
+        IntResults firstPeriod{periodShots.find(0)->get_document().value["home"].get_int32(), periodShots.find(0)->get_document().value["away"].get_int32()};
+        IntResults secondPeriod{periodShots.find(1)->get_document().value["home"].get_int32(), periodShots.find(1)->get_document().value["away"].get_int32()};
+        IntResults thirdPeriod{periodShots.find(2)->get_document().value["home"].get_int32(), periodShots.find(2)->get_document().value["away"].get_int32()};
 
+        shotsOnGoal.push_back(firstPeriod);
+        shotsOnGoal.push_back(secondPeriod);
+        shotsOnGoal.push_back(thirdPeriod);
+        auto shotsHome = std::accumulate(shotsOnGoal.begin(), shotsOnGoal.end(), 0, [&](auto& acc, const auto period) {
+           return acc + period.home;
+        });
+        auto shotsAway = std::accumulate(shotsOnGoal.begin(), shotsOnGoal.end(), 0, [&](auto& acc, const auto period) {
+            return acc + period.away;
+        });
+        std::cout << "Shots home/shots away" << shotsHome << "/" << shotsAway << std::endl;
+        assert(shotsHome < 100);
+        assert(shotsAway < 100);
+        auto teamWon = d["teamWon"].get_utf8().value.to_string();
+        IntResults finalResult{d["finalResult"]["home"].get_int32(), d["finalResult"]["away"].get_int32()};
+        IntResults faceOffWins{d["faceOffWins"]["home"].get_int32(), d["faceOffWins"]["away"].get_int32()};
+        PowerPlay pp{
+            SpecialTeams{d["powerPlay"]["home"]["goals"].get_int32(), d["powerPlay"]["home"]["totals"].get_int32()},
+            SpecialTeams{d["powerPlay"]["away"]["goals"].get_int32(), d["powerPlay"]["away"]["total"].get_int32()}
+        };
+        IntResults PIM{d["penaltyMinutes"]["home"].get_int32(), d["penaltyMinutes"]["away"].get_int32()};
+        IntResults hits{d["hits"]["home"].get_int32(), d["hits"]["away"].get_int32()};
+        IntResults blockedShots{d["blockedShots"]["home"].get_int32(), d["blockedShots"]["away"].get_int32()};
+        IntResults giveAways{d["giveAways"]["home"].get_int32(), d["giveAways"]["away"].get_int32()};
+        std::chrono::system_clock::time_point t{d["datePlayed"].get_date().value};
+
+        auto scoringSummaryDoc = d["scoringSummary"].get_array().value;
+        std::vector<ScoringModel> goals{};
+        for(auto& goal : scoringSummaryDoc) {
+            auto goalDoc = goal.get_document().view();
+            auto firstAssist = goalDoc["assists"].get_array().value.find(0)->get_utf8().value.to_string();
+            auto secondAssist = goalDoc["assists"].get_array().value.find(1)->get_utf8().value.to_string();
+
+            auto [ass1, ass2] = convertAssistStrings(firstAssist, secondAssist);
+
+            auto goalNumber = goalDoc["goal"].get_int32();
+            auto period = goalDoc["period"].get_int32();
+            auto timeDoc = goalDoc["time"].get_document().view();
+
+            auto timeMins = timeDoc["minutes"].get_int32();
+            auto timeSecs = timeDoc["seconds"].get_int32();
+
+            auto strength = goalDoc["strength"].get_utf8().value.to_string();
+            auto strength_t = ScoringModel::convert_strength_string(strength);
+            auto scoringTeam = goalDoc["scoringTeam"].get_utf8().value.to_string();
+            auto goalScorer = goalDoc["goalScorer"].get_utf8().value.to_string();
+            GameTime gt{timeMins, timeSecs, period};
+            auto fullTeamName = teams_map()[scoringTeam];
+            ScoringModel sm{goalNumber, gt, strength_t, scoringTeam, goalScorer, ass1, ass2};
+            goals.push_back(sm);
+        }
+        GameModel gm{d["gameID"].get_int32().value, gmTeams, teamWon, t, shotsOnGoal, finalResult, faceOffWins, pp, PIM, hits, blockedShots, giveAways, std::move(goals)};
+        return gm;
     }
+}
+
+std::optional<GameInfoModel> MDbConnection::get_game_info(int gameID)
+{
+    using Teams = TeamsValueHolder<std::string>;
+    // query data base
+    auto collection = m_connection[m_dbName]["gameinfos"];
+    auto query = document{} << "gameID" << gameID << finalize;
+    auto cursor = collection.find(query.view());
+    auto docs_found = 0;
+    for(auto doc : cursor) {
+          std::cout << bsoncxx::to_json(doc) << std::endl;
+          docs_found++;
+
+          int gameID = doc["gameID"].get_int32().value;
+          Teams teams{doc["teams"]["home"].get_utf8().value.to_string(), doc["teams"]["away"].get_utf8().value.to_string()};
+          std::chrono::system_clock::time_point datePlayed{doc["datePlayed"].get_date().value};
+        return GameInfoModel{gameID, teams, datePlayed};
+    }
+    return {};
 }
 
 std::vector<GameInfoModel> MDbConnection::getGamesAtDate(DayRange day)

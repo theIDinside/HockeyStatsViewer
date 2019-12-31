@@ -1,50 +1,51 @@
 #include "trend.h"
-
+#include <utils.h>
 TrendComparisonAccumulator::TrendComparisonAccumulator(std::string team) :
     team(team), m_PK{0}, m_PP{0},
     m_GF{0},m_GA{0}, m_SF{0},
-    m_SA{0}, games_analyzed(0)
+    m_SA{0}, m_PPG{0}, m_PKG{0}, games_analyzed(0)
 {
 
 }
 
 double TrendComparisonAccumulator::gf_average() const {
-    return m_GF / games_analyzed;
+    return divide_integers(m_GF, games_analyzed);
 }
 
 double TrendComparisonAccumulator::ga_average() const
 {
-    return m_GA / games_analyzed;
+    return divide_integers(m_GA, games_analyzed);
 }
 
 double TrendComparisonAccumulator::sf_average() const
 {
-    return m_SF / games_analyzed;
+    std::cout << "Raw shots for: " << m_SF << " games analyzed: " << games_analyzed << " Average: " << divide_integers(m_SF, games_analyzed) << std::endl;
+    return divide_integers(m_SF, games_analyzed);
 }
 
 double TrendComparisonAccumulator::sa_average() const
 {
-    return m_SA / games_analyzed;
+    return divide_integers(m_SA, games_analyzed);
 }
 
 double TrendComparisonAccumulator::pp_efficiency() const
 {
-    return m_PPG / m_PP;
+    return divide_integers(m_PPG, m_PP);
 }
 
 double TrendComparisonAccumulator::pk_efficiency() const
 {
-    return 1-(m_PKG / m_PK);
+    return 1.0-(divide_integers(m_PKG,  m_PK));
 }
 
 double TrendComparisonAccumulator::pp_times_average() const
 {
-    return m_PP / games_analyzed;
+    return divide_integers(m_PP, games_analyzed);
 }
 
 double TrendComparisonAccumulator::pk_times_average() const
 {
-    return m_PK / games_analyzed;
+    return divide_integers(m_PK, games_analyzed);
 }
 
 void TrendComparisonAccumulator::push_game_stats(const GameStatistics &gs)
@@ -57,6 +58,7 @@ void TrendComparisonAccumulator::push_game_stats(const GameStatistics &gs)
     this->m_SA  += gs.m_SA;
     this->m_PPG += gs.m_PPG;
     this->m_PKG += gs.m_PKG;
+    std::cout << "Shots for in acc: " << this->m_SF << " in gs: " << gs.m_SF;
     games_analyzed++;
 }
 

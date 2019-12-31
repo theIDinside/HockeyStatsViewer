@@ -30,10 +30,8 @@ QVariant StatTable::data(const QModelIndex &index, int role) const
     } else if(index.isValid()) {
         if(role == Qt::DisplayRole) {
             if(auto col = index.column(); col == 0) { // Away Team Column
-                qDebug() << "Away EN Goals: " << aData[index.row()];
                 return aData[index.row()];
             } else if(col == 1) { // Home team column
-                // qDebug() << "Away EN Goals: " << hData[index.row()];
                 return hData[index.row()];
             }
         } else if(role == Qt::BackgroundRole || role == Qt::BackgroundColorRole) {

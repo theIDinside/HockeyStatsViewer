@@ -46,7 +46,7 @@ public:
 
 private:
     bool m_init = false;
-private:
+public:
     int m_game_id;
     TeamNames m_teams;
     std::string m_team_won;
@@ -70,7 +70,7 @@ public:
     GameModel() :
         m_game_id(0), m_teams{"", ""},
         m_team_won{""}, m_date_played{},
-        m_date_played_time_t{}, m_shots_on_goal{},
+        m_date_played_time_t{}, m_shots_on_goal{{0,0},{0,0}, {0,0}},
         m_final_result{0, 0}, m_face_off_wins{0, 0},
         m_penalty_infraction_minutes{0,0}, m_hits{0,0},
         m_blocked_shots{}, m_give_aways{}, m_goals{}
@@ -91,6 +91,7 @@ public:
             m_team_won = rhs.m_team_won;
             m_date_played = rhs.m_date_played;
             m_date_played_time_t = {};
+            m_shots_on_goal.clear(); // Wow what a difficult bug to find this created, when I forgot to clear the vector.
             std::copy(rhs.m_shots_on_goal.begin(), rhs.m_shots_on_goal.end(), std::back_inserter(m_shots_on_goal));
             m_final_result = rhs.m_final_result;
             m_face_off_wins = rhs.m_face_off_wins;

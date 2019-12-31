@@ -10,6 +10,7 @@
 #include <vector>
 #include <tuple>
 #include <chrono>
+#include <optional>
 
 class MDbConnection
 {
@@ -26,7 +27,8 @@ public:
 
     std::vector<GameModel> getGames(const std::string& team);
     std::vector<GameInfoModel> getTodaysGames();
-
+    GameModel get_game(int gameID);
+    std::optional<GameInfoModel> get_game_info(int gameID);
 
     using DayRange = std::pair<std::chrono::system_clock::time_point, std::chrono::system_clock::time_point>;
     std::vector<GameInfoModel> getGamesAtDate(DayRange day);
