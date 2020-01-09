@@ -44,6 +44,7 @@ SOURCES += \
     mdbconnection.cpp \
     gametime.cpp \
     gamelistitemmodel.cpp \
+    resultanalysiswidget.cpp \
     seasontablemodel.cpp \
     tabs/divisiontab.cpp \
     tabs/goalstab.cpp \
@@ -77,6 +78,7 @@ HEADERS += \
         mainwindow.h \
     mdbconnection.h \
     gametime.h \
+    resultanalysiswidget.h \
     seasontablemodel.h \
     tabs/divisiontab.h \
     tabs/goalstab.h \
@@ -98,7 +100,8 @@ HEADERS += \
 FORMS += \
         gameboxeschart.ui \
         gamedatapopup.ui \
-        mainwindow.ui
+        mainwindow.ui \
+        resultanalysiswidget.ui
 
 INCLUDEPATH += /usr/local/include/mongocxx/v_noabi /usr/local/include/bsoncxx/v_noabi
 

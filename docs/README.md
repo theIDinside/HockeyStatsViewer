@@ -32,6 +32,7 @@
       make the stat not really show the truthyness of how often a goal is let up/made, when it comes to Empty Net scoring.
 - [x] Make sure that GF/GA statistics do not account for Shootout goals (which it currently *does*).
 - [ ] Distribution analysis of goals made, w/ respect to time. We can create a chart, that displays in what "regions" of game time where most goals are scored / let up, instead of just to static "by period" statistic.
+- [ ] Add ability to hide individual series
 
 ### Statistics and Trend specification
 
