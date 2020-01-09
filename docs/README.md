@@ -24,15 +24,15 @@
 
 ### Features to add / change
 
-[x] - PDO stats
-[] - Corsi stats
-[] -  Live Result analysis
-[] -  Adjust EN goal stats, the empty net let ups need to be adjusted to show games where goalie was pulled. If stats say for example (currently)
-   32%, this might count for games where the goalie was *not* pulled (usually when deficit is greater than 2 goals), therefore, this 
-   make the stat not really show the truthyness of how often a goal is let up/made, when it comes to Empty Net scoring.
-[x] 5. Make sure that GF/GA statistics do not account for Shootout goals (which it currently *does*).
-[ ] 6. Distribution analysis of goals made, w/ respect to time. We can create a chart, that displays in what "regions" of game time
-   where most goals are scored / let up, instead of just to static "by period" statistic.
+	[x] PDO stats
+	[ ] Corsi stats
+	[ ] Live Result analysis
+	[ ] Adjust EN goal stats, the empty net let ups need to be adjusted to show games where goalie was pulled. If stats say for example (currently) 32%, 
+		this might count for games where the goalie was *not* pulled (usually when deficit is greater than 2 goals), therefore, this 
+		make the stat not really show the truthyness of how often a goal is let up/made, when it comes to Empty Net scoring.
+	[x] Make sure that GF/GA statistics do not account for Shootout goals (which it currently *does*).
+	[ ] Distribution analysis of goals made, w/ respect to time. We can create a chart, that displays in what "regions" of game time
+		where most goals are scored / let up, instead of just to static "by period" statistic.
 
 ### Statistics and Trend specification
 
