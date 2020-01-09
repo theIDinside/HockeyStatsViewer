@@ -59,15 +59,24 @@ an average of a statistic over the last 5 games at that time. So a goals for, sh
 Along with that data, the season average before that game is also displayed. So the values that are at X=4, is what the *current* average is
 for respective category.
 
-![Tab displaying goals for/against/total, per 5-game span average, with also showing the current season average at that date for comparison. Also displays a
+![Tab displaying goals for/against/total etc](./imgs/tab-goals.png)
+Per 5-game span average, with also showing the current season average at that date for comparison. Also displays a
 table with data of how many games empty net goals were scored and let up, respectively. These only are in respect to games won in Regulation, 
-therefore not in over time nor shootout.](./docs/imgs/tab-goals.png)
-![Special team statistics, some with 5 game span average mixed with the season average. Not all charts are fully implemented with the corresponding season average yet.](./docs/imgs/tab-specialteams.png)
-![Division stats. Shows stats vs division of opponent. One can see the selected game in the list box to the left (which controls what data is displayed in all tabs.
-The data displayed in this tab, is all season averages, there is no 5-game span average, as inter-division games are much more rare, than intra division.](./docs/imgs/tab-divisionstats.png)
-![Period stats. These charts displays period averages, over a 5-game span average, over the last 5 games.](./docs/imgs/tab-periodstats.png)
-![Last 5 games. This tab will show some analysis of the last 5 games played. It currently shows a custom widget that displays whether or not
+therefore not in over time nor shootout
+
+![Special team statistics.](./imgs/tab-specialteams.png)
+Some with 5 game span average mixed with the season average. Not all charts are fully implemented with the corresponding season average yet
+
+![Division stats.](./imgs/tab-divisionstats.png)
+Shows stats vs division of opponent. One can see the selected game in the list box to the left (which controls what data is displayed in all tabs.
+The data displayed in this tab, is all season averages, there is no 5-game span average, as inter-division games are much more rare, than intra division
+
+![Period stats. These charts displays period averages, over a 5-game span average, over the last 5 games.](./imgs/tab-periodstats.png)
+
+![Last 5 games.](./imgs/tab-last5games.png)
+This tab will show some analysis of the last 5 games played. It currently shows a custom widget that displays whether or not
 the a game was won or lost (green/red W/L). When clicked, these show a pop up window, that will display some statistics of the game, in comparison to the 
 season trend. This way, we can determine if Team A or B had a better game, in comparison to it's trend it has been having, thus we can tell if Team A won,
-because they played better, or because Team B just played so much worse, or a mixture of all combinations. An image of this popup is displayed further down.](./docs/imgs/tab-last5games.png)
-![Last 5 game pop up](./docs/imgs/last5games-gamepopup.png)
+because they played better, or because Team B just played so much worse, or a mixture of all combinations. An image of this popup is displayed further down
+
+![Last 5 game pop up](./imgs/last5games-gamepopup.png)
