@@ -33,6 +33,8 @@
 - [x] Make sure that GF/GA statistics do not account for Shootout goals (which it currently *does*).
 - [ ] Distribution analysis of goals made, w/ respect to time. We can create a chart, that displays in what "regions" of game time where most goals are scored / let up, instead of just to static "by period" statistic.
 - [ ] Add ability to hide individual series
+- [ ] Add ability to "mark" series from different charts (that has to be at least tangientially related) so that comparisons can be made to, perhaps be shown in a popup of sorts.
+- [ ] Add a user interface / console that interfaces with the node application that scrapes the stats data, perhaps initially just show progress of scraping to begin with.
 
 ### Statistics and Trend specification
 
