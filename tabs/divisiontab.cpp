@@ -10,13 +10,16 @@ DivisionTab::DivisionTab(QWidget *parent) : TeamStatsTab(parent), m_layout{this}
     pTotalGoals     = new LineChart("Total Goals");
     pShotEfficiency = new LineChart("Shot efficiency");
 
+    chartPointers << pPowerPlay << pPenaltyKill << pTimesInPP << pTimesInPK << pGoalsFor << pGoalsAgainst << pTotalGoals << pShotEfficiency;
+
+    for(auto& ptr : chartPointers) ptr->setMinimumHeight(350);
     m_layout.addWidget(pPowerPlay, 0, 0);
     m_layout.addWidget(pPenaltyKill, 0, 1);
-    m_layout.addWidget(pTimesInPP, 0, 2);
-    m_layout.addWidget(pTimesInPK, 1, 0);
-    m_layout.addWidget(pGoalsFor, 1, 1);
-    m_layout.addWidget(pGoalsAgainst, 1, 2);
-    m_layout.addWidget(pTotalGoals, 2, 0);
+    m_layout.addWidget(pTimesInPP, 1, 0);
+    m_layout.addWidget(pTimesInPK, 1, 1);
+    m_layout.addWidget(pGoalsFor, 2, 0);
+    m_layout.addWidget(pGoalsAgainst, 2, 1);
+    m_layout.addWidget(pTotalGoals, 3, 0);
 
 }
 
@@ -129,4 +132,10 @@ void DivisionTab::update_chart_data(const TeamStats &home, const TeamStats &away
         // otherwise we will end up with a chart, where one team might have 5 data points, and the other only 3, for example.
         auto largest_possible_range_analysis = std::min(home_games.size(), away_games.size());
     }
+}
+
+void DivisionTab::set_chart_title_string_prefix(QString string)
+{
+    for(auto& chart : chartPointers)
+        chart->set_title(QString("%1 %2").arg(chart->get_title()).arg(string));
 }

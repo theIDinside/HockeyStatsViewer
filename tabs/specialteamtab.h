@@ -17,11 +17,16 @@ public:
         delete pPowerPlayPerGame;
         delete pPenaltyKillPerGame;
     }
-    void update_chart_data(const TeamStats& home, const TeamStats& away) override;
 private:
     QGridLayout m_layout;
+    QList<LineChart*> chartPointers;
     LineChart* pPowerPlay;
     LineChart* pPenaltyKill;
     LineChart* pPowerPlayPerGame;
     LineChart* pPenaltyKillPerGame;
+
+    // TeamStatsTab interface
+public:
+    void update_chart_data(const TeamStats& home, const TeamStats& away) override;
+    void set_chart_title_string_prefix(QString string) override;
 };

@@ -92,7 +92,6 @@ void LineChart::clear_and_update_new_data(const std::string &home, const std::st
     away_series->setPen(pa);
     auto max_value = 0.0;
     auto min_value = 100.0;
-    if(type == LineChartRangeType::Percent) min_value = 0;
     auto stepix = 0.0;
     for(const auto& val : home_chart_data) {
         home_series->append(stepix, val);
@@ -110,7 +109,8 @@ void LineChart::clear_and_update_new_data(const std::string &home, const std::st
     if(min_value >= 1.0) min_value-=0.3;
     max_value += 0.3;
     if(type == LineChartRangeType::Percent) {
-        max_value = (std::max(max_value, 50.0) > 50.0) ? 100.0 : 50.0;
+        max_value += 5;
+        min_value = std::max(0.0, min_value-5);
     }
     m_series << away_series;
     m_series << home_series;
@@ -132,9 +132,11 @@ void LineChart::clear_and_update_new_data(const std::string &home, const std::st
 void LineChart::clear_and_update_new_multi_series_data(const std::vector<std::string> &series_names, std::vector<std::vector<double> > series_vector, LineChartRangeType type)
 {
     assert(series_names.size() == series_vector.size() && "Series name vector must match amount of series, and vice versa");
+    multi_series_names.clear();
     valueType = type;
     m_series.clear();
     multi_series.clear();
+    multi_series_names = series_names;
     m_chart->removeAllSeries();
 
     auto tooltips = m_saved_tooltips;
@@ -145,7 +147,7 @@ void LineChart::clear_and_update_new_multi_series_data(const std::vector<std::st
     int seriesIndex = 0;
     auto max_value = 0.0;
     auto min_value = 100.0;
-    if(type == LineChartRangeType::Percent) min_value = 0;
+    if(type == LineChartRangeType::Percent) min_value = 50.0;
     for(const auto& seriesTitle: series_names) {
         const auto& series = series_vector[seriesIndex];
         std::vector<double> res;
@@ -160,10 +162,10 @@ void LineChart::clear_and_update_new_multi_series_data(const std::vector<std::st
             max_value = std::max(val, max_value);
             min_value = std::min(val, min_value);
         }
-        if(min_value >= 1.0) min_value-=0.3;
+        if(min_value >= 1.0 && type != LineChartRangeType::Percent) min_value-=0.3;
         max_value += 0.3;
         if(type == LineChartRangeType::Percent) {
-            max_value = (std::max(max_value, 50.0) > 50.0) ? 100.0 : 50.0;
+            max_value = (std::max(max_value, 50.0) > 55.0) ? 100.0 : 50.0;
         }
         m_series << lineSeries;
         m_chart->addSeries(lineSeries);
@@ -179,6 +181,11 @@ void LineChart::clear_and_update_new_multi_series_data(const std::vector<std::st
     }
 }
 
+void LineChart::add_series(const std::string &home, const std::string &away, std::vector<double> home_series, std::vector<double> away_series)
+{
+
+}
+
 void LineChart::set_title(const std::string &title)
 {
     m_chart->setTitle(title.c_str());
@@ -187,6 +194,11 @@ void LineChart::set_title(const std::string &title)
 void LineChart::set_title(const QString &title)
 {
     m_chart->setTitle(title);
+}
+
+QString LineChart::get_title() const
+{
+    return m_chart->title();
 }
 
 void LineChart::resizeEvent(QResizeEvent *event)
@@ -286,7 +298,25 @@ void LineChart::tooltip(QPointF point, bool state)
                     m_tooltip->show();
                 }
             } else {
-                std::cout << "error. unknown series index" << std::endl;
+                if(auto elem = std::find(multi_series_names.begin(), multi_series_names.end(), name.toStdString()); multi_series_names.size() > 0 && elem != multi_series_names.end()) {
+                    auto index = std::distance(multi_series_names.begin(), elem);
+                    auto nearest_x = std::round(point.x());
+                    auto nearest_y = multi_series[index][static_cast<std::size_t>(nearest_x)];
+                    auto actual_data_point = QPointF{nearest_x, nearest_y};
+                    auto valueTypeString = (valueType == LineChartRangeType::Value) ? "" : "%";
+                    auto alreadyShown = false;
+                    for(const auto& ttip : m_saved_tooltips) {
+                        if(ttip->get_datapoint_identifier() == (index*100)+nearest_x) alreadyShown = true;
+                    }
+                    if(!alreadyShown) {
+                        m_tooltip->setText(QString("%1:\n %2%3").arg(name).arg(nearest_y).arg(valueTypeString));
+                        m_tooltip->setAnchor(actual_data_point);
+                        m_tooltip->setZValue(11);
+                        m_tooltip->set_datapoint_identifier((index*100)+nearest_x);
+                        m_tooltip->updateGeometry();
+                        m_tooltip->show();
+                    }
+                }
             }
         }
     } else {

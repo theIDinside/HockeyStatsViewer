@@ -16,12 +16,12 @@ PeriodTab::PeriodTab(QWidget* parent) : TeamStatsTab(parent), m_layout{this}
     m_layout.addWidget(h_chart_sf, 2, 0);   m_layout.addWidget(a_chart_sf, 2, 1);
     m_layout.addWidget(h_chart_sa, 3, 0);   m_layout.addWidget(a_chart_sa, 3, 1);
 
-    chartPtrs << h_chart_gf << h_chart_ga << h_chart_sf << h_chart_sa << a_chart_gf << a_chart_ga << a_chart_sf << a_chart_sa;
+    chartPointers << h_chart_gf << h_chart_ga << h_chart_sf << h_chart_sa << a_chart_gf << a_chart_ga << a_chart_sf << a_chart_sa;
 }
 
 PeriodTab::~PeriodTab()
 {
-    for(auto& ptr : chartPtrs) delete ptr;
+    for(auto& ptr : chartPointers) delete ptr;
 }
 
 void PeriodTab::update_chart_data(const TeamStats &home, const TeamStats &away)
@@ -83,4 +83,10 @@ void PeriodTab::update_chart_data(const TeamStats &home, const TeamStats &away)
     a_chart_ga->clear_and_update_new_multi_series_data(periods, aGAAvg);
     a_chart_sf->clear_and_update_new_multi_series_data(periods, aSFAvg);
     a_chart_sa->clear_and_update_new_multi_series_data(periods, aSAAvg);
+}
+
+void PeriodTab::set_chart_title_string_prefix(QString string)
+{
+    for(auto& chart : chartPointers)
+        chart->set_title(QString("%1 %2").arg(chart->get_title()).arg(string));
 }

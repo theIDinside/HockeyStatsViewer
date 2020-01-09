@@ -19,7 +19,6 @@ double TrendComparisonAccumulator::ga_average() const
 
 double TrendComparisonAccumulator::sf_average() const
 {
-    std::cout << "Raw shots for: " << m_SF << " games analyzed: " << games_analyzed << " Average: " << divide_integers(m_SF, games_analyzed) << std::endl;
     return divide_integers(m_SF, games_analyzed);
 }
 
@@ -58,7 +57,6 @@ void TrendComparisonAccumulator::push_game_stats(const GameStatistics &gs)
     this->m_SA  += gs.m_SA;
     this->m_PPG += gs.m_PPG;
     this->m_PKG += gs.m_PKG;
-    std::cout << "Shots for in acc: " << this->m_SF << " in gs: " << gs.m_SF;
     games_analyzed++;
 }
 
@@ -68,15 +66,15 @@ TrendComparison::TrendComparison(double pk, double pp, double gf, double ga, dou
 
 }
 
-TrendComparison::TrendComparison(const TrendComparisonAccumulator &acc, const GameStatistics &gs) :
-    m_PK(gs.pk_efficiency() - acc.pk_efficiency()),
-    m_PP(gs.pp_efficiency() - acc.pp_efficiency()),
-    m_GF(gs.m_GF - acc.gf_average()),
-    m_GA(gs.m_GA - acc.ga_average()),
-    m_SF(gs.m_SF - acc.sf_average()),
-    m_SA(gs.m_SA - acc.sa_average()),
-    m_PPT(gs.m_PP - acc.pp_times_average()),
-    m_PKT(gs.m_PK - acc.pk_times_average())
+TrendComparison::TrendComparison(const TrendComparisonAccumulator &trendData, const GameStatistics &gs) :
+    m_PK(gs.pk_efficiency() - trendData.pk_efficiency()),
+    m_PP(gs.pp_efficiency() - trendData.pp_efficiency()),
+    m_GF(gs.m_GF - trendData.gf_average()),
+    m_GA(gs.m_GA - trendData.ga_average()),
+    m_SF(gs.m_SF - trendData.sf_average()),
+    m_SA(gs.m_SA - trendData.sa_average()),
+    m_PPT(gs.m_PP - trendData.pp_times_average()),
+    m_PKT(gs.m_PK - trendData.pk_times_average())
 {
 
 }

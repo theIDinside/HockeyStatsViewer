@@ -13,6 +13,7 @@ GoalsTab::GoalsTab(QWidget* parent) : TeamStatsTab(parent), m_layout{this}, pGoa
     pGoalsFor = gf;
     pGoalsAgainst = ga;
     pTotalGoals = gt;
+    chartPointers << pGoalsFor << pGoalsAgainst << pTotalGoals;
     mTable = new QTableView(this);
     mTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_layout.addWidget(gf,0,0);
@@ -31,6 +32,39 @@ void GoalsTab::update_chart_data(const TeamStats &home, const TeamStats &away)
     auto awayGF = away.goals_for_avg(Span::Five);
     auto homeGA = home.goals_against_avg(Span::Five);
     auto awayGA = away.goals_against_avg(Span::Five);
+
+    auto homeTeam = home.team_name();
+    auto awayTeam = away.team_name();
+
+    auto HSGF = home.goals_for_avg(TeamStats::Span::Season);
+    auto homeSeasonGF = home.season_avg_last_x_games(5, [&](auto teamName, auto begin, auto end, auto divisor) {
+        double goals_made = std::accumulate(begin, end, 0.0, [&](auto& acc, const GameModel& game) {
+            return acc + (double)game.goals_by(game.get_team_type(teamName), GoalType::Game);
+        });
+        return goals_made / (double) divisor;
+    });
+    auto awaySeasonGF = away.season_avg_last_x_games(5, [&](auto teamName, auto begin, auto end, auto divisor) {
+        double goals_made = std::accumulate(begin, end, 0.0, [&](auto& acc, const GameModel& game) {
+            return acc + (double)game.goals_by(game.get_team_type(teamName), GoalType::Game);
+        });
+        return goals_made / (double) divisor;
+    });
+
+    auto homeSeasonGA = home.season_avg_last_x_games(5, [&](auto teamName, auto begin, auto end, auto divisor) {
+        double goals_against = std::accumulate(begin, end, 0.0, [&](auto& acc, const GameModel& game) {
+           return acc + (double)game.goals_by(game.get_opponent_team_type(teamName), GoalType::Game);
+        });
+        return goals_against / (double)divisor;
+    });
+    auto awaySeasonGA = away.season_avg_last_x_games(5, [&](auto teamName, auto begin, auto end, auto divisor) {
+        double goals_against = std::accumulate(begin, end, 0.0, [&](auto& acc, const GameModel& game) {
+           return acc + (double)game.goals_by(game.get_opponent_team_type(teamName), GoalType::Game);
+        });
+        return goals_against / (double)divisor;
+    });
+
+    std::vector<std::vector<double>> GFData{homeGF, homeSeasonGF, awayGF, awaySeasonGF};
+    std::vector<std::vector<double>> GAData{homeGA, homeSeasonGA, awayGA, awaySeasonGA};
 
     QList<QString> tableRowHeaders;
     tableRowHeaders << "Empty net goals" << "Empty net let ups" << "Games with PP goals" << "Games with PK Letups";
@@ -72,8 +106,16 @@ void GoalsTab::update_chart_data(const TeamStats &home, const TeamStats &away)
         totalHome.push_back(homeGF[i] + homeGA[i]);
         totalAway.push_back(awayGF[i] + awayGA[i]);
     }
-
-    pGoalsFor->clear_and_update_new_data(home.team_name(), away.team_name(), homeGF, awayGF);
-    pGoalsAgainst->clear_and_update_new_data(home.team_name(), away.team_name(), homeGA, awayGA);
+    std::vector<std::string> seriesNames{home.team_name(), home.team_name() + " Season", away.team_name(), away.team_name() + " Season"};
+    // pGoalsFor->clear_and_update_new_data(home.team_name(), away.team_name(), homeGF, awayGF);
+    pGoalsFor->clear_and_update_new_multi_series_data(seriesNames, GFData);
+    //pGoalsAgainst->clear_and_update_new_data(home.team_name(), away.team_name(), homeGA, awayGA);
+    pGoalsAgainst->clear_and_update_new_multi_series_data(seriesNames, GAData);
     pTotalGoals->clear_and_update_new_data(home.team_name(), away.team_name(), totalHome, totalAway);
+}
+
+void GoalsTab::set_chart_title_string_prefix(QString string)
+{
+    for(auto& chart : chartPointers)
+        chart->set_title(QString("%1 %2").arg(chart->get_title()).arg(string));
 }

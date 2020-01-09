@@ -1,6 +1,6 @@
 #pragma once
 #include <QDialog>
-#include "popuptablemodel.h"
+#include "data/popuptablemodel.h"
 
 namespace Ui {
 class GameDataPopup;

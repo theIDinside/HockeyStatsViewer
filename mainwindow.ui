@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Hockey Statistics Analyzer</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
@@ -69,6 +69,9 @@
           </size>
          </property>
         </widget>
+       </item>
+       <item>
+        <widget class="QListView" name="listView"/>
        </item>
        <item>
         <widget class="QPushButton" name="mLoadGamesToday">

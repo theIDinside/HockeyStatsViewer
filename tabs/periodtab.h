@@ -11,7 +11,6 @@ class PeriodTab : public TeamStatsTab
 public:
     PeriodTab(QWidget* parent=nullptr);
     ~PeriodTab();
-    void update_chart_data(const TeamStats &home, const TeamStats &away) override;
 
 private:
     QGridLayout m_layout;
@@ -24,6 +23,10 @@ private:
     LineChart* a_chart_ga;
     LineChart* a_chart_sf;
     LineChart* a_chart_sa;
-    QList<LineChart*> chartPtrs;
+    QList<LineChart*> chartPointers;
 
+    // TeamStatsTab interface
+public:
+    void update_chart_data(const TeamStats &home, const TeamStats &away) override;
+    void set_chart_title_string_prefix(QString string) override;
 };

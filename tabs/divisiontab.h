@@ -13,6 +13,7 @@ public:
 
     }
     void update_chart_data(const TeamStats &home, const TeamStats &away) override;
+    void set_chart_title_string_prefix(QString string) override;
 private:
     QGridLayout m_layout;
     LineChart* pPowerPlay;
@@ -23,4 +24,9 @@ private:
     LineChart* pGoalsAgainst;
     LineChart* pTotalGoals;
     LineChart* pShotEfficiency;
+    QList<LineChart*> chartPointers;
+
+    // TeamStatsTab interface
+public:
+
 };

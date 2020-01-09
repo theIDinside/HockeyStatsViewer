@@ -239,7 +239,7 @@ void MainWindow::game_data_popup(int gameID)
                                              TA.m_SF,
                                              TA.m_SA});
 
-    popup->update_table_data_show(m_home.team_name(), m_away.team_name(), homeTable, awayTable);
+    popup->update_table_data_show(homeTeam, awayTeam, homeTable, awayTable);
     popup->exec();
 }
 

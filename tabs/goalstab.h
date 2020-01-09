@@ -15,11 +15,16 @@ public:
         delete pTotalGoals;
     }
     void update_chart_data(const TeamStats& home, const TeamStats& away) override;
-
+    void set_chart_title_string_prefix(QString string) override;
 private:
     QGridLayout m_layout;
     LineChart* pGoalsFor;
     LineChart* pGoalsAgainst;
     LineChart* pTotalGoals;
+    QList<LineChart*> chartPointers;
     QTableView* mTable;
+
+    // TeamStatsTab interface
+public:
+
 };

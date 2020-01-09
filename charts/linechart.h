@@ -40,10 +40,12 @@ public:
     LineChart(std::string title, QWidget* parent = nullptr);
     void clear_and_update_new_data(const std::string& home, const std::string& away,  std::vector<double> home_chart_data, std::vector<double> away_chart_data, LineChartRangeType type=LineChartRangeType::Value);
     void clear_and_update_new_multi_series_data(const std::vector<std::string>& series_names, std::vector<std::vector<double>> series_vector, LineChartRangeType type=LineChartRangeType::Value);
+    void add_series(const std::string& home, const std::string& away, std::vector<double> home_series, std::vector<double> away_series);
     // TODO:
     friend QPointF translate_to_actual_data(LineChart& lineChart, QPointF chart_point, std::size_t series_index);
     void set_title(const std::string& title);
     void set_title(const QString& title);
+    QString get_title() const;
 protected:
     void resizeEvent(QResizeEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
@@ -61,7 +63,7 @@ private:
     QList<LineChartDataToolTip*> m_saved_tooltips;
     QList<QLineSeries*> m_series;
     std::vector<std::vector<double>> multi_series;
-
+    std::vector<std::string> multi_series_names;
     std::vector<double> m_series_data_home; // we fetch the data from here, when we hover over the chart, otherwise we will get noise values between integer steps of the x-axis.
     std::vector<double> m_series_data_away;
     LineChartRangeType valueType;

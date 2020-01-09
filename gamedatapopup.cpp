@@ -1,13 +1,15 @@
 #include "gamedatapopup.h"
 #include "ui_gamedatapopup.h"
+#include <QHeaderView>
 
 GameDataPopup::GameDataPopup(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::GameDataPopup)
 {
     setWindowFlags(this->windowFlags() | Qt::FramelessWindowHint);
-    rowTypes << "GF" << "GA" << "PP" << "PK" << "SF" << "SA" << "Times in PP" << "Times in PK" << "Save %" << "Shot Efficiency";
+    rowTypes << "GF" << "GA" << "PP%" << "PK%" << "SF" << "SA" << "Times in PP" << "Times in PK" << "Save %" << "Shot Efficiency";
     ui->setupUi(this);
+    setToolTip("Left column displays this game's stats.\nRight column shows relative difference between game and trend stats.\nTrend stats are compiled from prior games only.");
 }
 
 GameDataPopup::~GameDataPopup()
@@ -27,6 +29,7 @@ void GameDataPopup::update_table_data_show(const std::string &homeTeam, const st
 
     ui->hTeamLabel->setText(home_team);
     ui->aTeamLabel->setText(away_team);
+
     PopupTableModel* homeModel = new PopupTableModel();
     PopupTableModel* awayModel = new PopupTableModel();
     homeModel->populate_data(home_team, hGameStats, hTrendStats);
@@ -34,6 +37,10 @@ void GameDataPopup::update_table_data_show(const std::string &homeTeam, const st
 
     ui->aTeamLabelView->setModel(awayModel);
     ui->hTeamTableView->setModel(homeModel);
+
+    ui->hTeamTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->aTeamLabelView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
 }
 
 void GameDataPopup::hide_gamedata_dialog()

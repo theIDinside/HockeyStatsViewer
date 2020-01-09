@@ -20,4 +20,8 @@ private:
     QGridLayout m_layout;
     GameBoxesChart* lastFiveHome;
     GameBoxesChart* lastFiveAway;
+
+    // TeamStatsTab interface
+public:
+    void set_chart_title_string_prefix(QString string) override;
 };

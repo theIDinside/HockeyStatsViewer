@@ -25,8 +25,9 @@ enum GamePeriod : std::size_t {
     OT = 3
 };
 
-std::string to_string(GamePeriod p);
 
+std::string to_string(GamePeriod p);
+GoalType from_goal(const ScoringModel& g);
 /**
  * @brief Our C++ type, corresponding to the GameModel model, defined in our node scrape application. This is a base class. Extend this class for whatever front end you desire.
  */
@@ -36,6 +37,8 @@ public:
         HOME,
         AWAY
     };
+
+
 
     static std::unordered_map<std::string, std::string> g_Teams;
     static std::set<std::string> g_TeamSet;
@@ -130,7 +133,7 @@ public:
     int pk_letups(TeamType t) const;
     double shot_efficiency(TeamType t) const;
     double save_pct(TeamType t) const;
-    int goals_by(TeamType t) const;
+    int goals_by(TeamType t, GoalType gt = GoalType::Any) const;
     int shots_by(TeamType t) const;
 
     int shots_period_by(GamePeriod period, TeamType t) const;

@@ -6,6 +6,7 @@
 #include <QBarSet>
 #include <vector>
 #include <data/trend.h>
+#include "iterators.h"
 
 using namespace QtCharts;
 using CRange = std::pair<std::vector<GameModel>::const_iterator, std::vector<GameModel>::const_iterator>;
@@ -14,6 +15,7 @@ double goalsForAverage(std::list<const GameModel*>& gamesList);
 struct FinalResult;
 
 std::string team_scoring(const ScoringModel& score_model);
+
 
 class TeamStats
 {
@@ -49,14 +51,38 @@ public:
 
 
     std::vector<const GameModel*> lastGames(std::size_t gameCount=5) const;                             // DONE
+    // Span analysis
     std::vector<double> goals_for_avg(TeamStats::Span span) const;                                      // DONE
     std::vector<double> goals_against_avg(TeamStats::Span span) const;                                  // DONE
     std::vector<double> shots_for_avg(TeamStats::Span span) const;                                      // DONE
     std::vector<double> shots_against_avg(TeamStats::Span span) const;                                  // DONE
-    std::vector<double> goals_for_avg_at(GameModel::TeamType type) const;                               // TODO:
-    std::vector<double> goals_against_avg_at(GameModel::TeamType type) const;                           // TODO:
-    std::vector<double> shots_for_avg_at(GameModel::TeamType type) const;                               // TODO:
-    std::vector<double> shots_against_avg_at(GameModel::TeamType type) const;                           // TODO:
+
+    // Returns season averages before each of last_amount_games games
+    std::vector<double> gf_avg_last_x_games(std::size_t last_amount_games) const;
+    std::vector<double> ga_avg_last_x_games(std::size_t last_amount_games) const;
+    std::vector<double> sf_avg_last_x_games(std::size_t last_amount_games) const;
+    std::vector<double> sa_avg_last_x_games(std::size_t last_amount_games) const;
+
+    // Fn should be a lambda, that retrieves the stats we want an average for, over game range 0->(games_played-last_amount_games) ... 0->games_played
+    // The lambda has definition (std::string teamName, Iterator first, Iterator end, element_count) where end must *not* be dereferenced, as it can (and will) at
+    // one point be m_gamesPlayed.cend(), and dereferencing an end iterator is UB.
+    template<typename StatFn>
+    std::vector<double> season_avg_last_x_games(std::size_t last_amount_games, StatFn statAvgCalculation) const {
+        auto games_played = m_gamesPlayed.size();
+        std::vector<double> average{};
+        auto end = std::next(m_gamesPlayed.cbegin(), games_played - (last_amount_games - 1));
+        for(; end <= m_gamesPlayed.cend(); ++end) {
+            double result = statAvgCalculation(m_team, m_gamesPlayed.cbegin(), end, std::distance(m_gamesPlayed.cbegin(), end));
+            average.push_back(result);
+        }
+        return average;
+    }
+
+    // Span analysis combined with predicate home/away
+    std::vector<double> goals_for_avg_at(GameModel::TeamType type, Span = Span::Season) const;                               // TODO:
+    std::vector<double> goals_against_avg_at(GameModel::TeamType type, Span = Span::Season) const;                           // TODO:
+    std::vector<double> shots_for_avg_at(GameModel::TeamType type, Span = Span::Season) const;                               // TODO:
+    std::vector<double> shots_against_avg_at(GameModel::TeamType type, Span = Span::Season) const;                           // TODO:
 
     std::vector<double> gf_avg_by_period(TeamStats::Span span, GamePeriod period) const;
     std::vector<double> ga_avg_by_period(TeamStats::Span span, GamePeriod period) const;

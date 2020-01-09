@@ -32,7 +32,9 @@ SOURCES += \
     data/gameinfomodel.cpp \
     data/gamemodel.cpp \
     data/gamestatistics.cpp \
+    data/popuptablemodel.cpp \
     data/scoringmodel.cpp \
+    data/statsheet.cpp \
     data/stattable.cpp \
     data/trend.cpp \
     gameboxeschart.cpp \
@@ -42,7 +44,6 @@ SOURCES += \
     mdbconnection.cpp \
     gametime.cpp \
     gamelistitemmodel.cpp \
-    popuptablemodel.cpp \
     seasontablemodel.cpp \
     tabs/divisiontab.cpp \
     tabs/goalstab.cpp \
@@ -51,6 +52,7 @@ SOURCES += \
     tabs/periodtab.cpp \
     tabs/resultstatstab.cpp \
     tabs/seasontab.cpp \
+    tabs/situationaltab.cpp \
     tabs/specialteamtab.cpp \
     tabs/teamstatstab.cpp \
     teamstats.cpp \
@@ -65,7 +67,9 @@ HEADERS += \
     data/gameinfomodel.h \
     data/gamemodel.h \
     data/gamestatistics.h \
+    data/popuptablemodel.h \
     data/scoringmodel.h \
+    data/statsheet.h \
     data/stattable.h \
     data/trend.h \
     gameboxeschart.h \
@@ -73,7 +77,6 @@ HEADERS += \
         mainwindow.h \
     mdbconnection.h \
     gametime.h \
-    popuptablemodel.h \
     seasontablemodel.h \
     tabs/divisiontab.h \
     tabs/goalstab.h \
@@ -82,6 +85,7 @@ HEADERS += \
     tabs/periodtab.h \
     tabs/resultstatstab.h \
     tabs/seasontab.h \
+    tabs/situationaltab.h \
     tabs/specialteamtab.h \
     tabs/teamstatstab.h \
     utils.h \

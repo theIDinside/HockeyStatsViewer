@@ -5,7 +5,9 @@
 #include <algorithm>
 
 static auto gameModelConstructedDebug = 0;
-
+std::string team_scoring(const ScoringModel& score_model) {
+    return teams_map()[score_model.m_scoring_team];
+}
 std::unordered_map<std::string, std::string> GameModel::g_Teams{};
 std::set<std::string> GameModel::g_TeamSet{};
 std::unordered_map<std::string, std::string> GameModel::g_TeamDivision{};
@@ -283,12 +285,33 @@ double GameModel::shot_efficiency(GameModel::TeamType t) const
     return goals_by(t) / shots_by(t);
 }
 
-int GameModel::goals_by(GameModel::TeamType t) const
+int GameModel::goals_by(GameModel::TeamType t, GoalType gt) const
 {
-    if(t == TeamType::AWAY) {
-       return m_final_result.away;
+    if(gt == GoalType::Any) {
+        if(t == TeamType::AWAY) {
+           return m_final_result.away;
+        } else {
+           return m_final_result.home;
+        }
     } else {
-       return m_final_result.home;
+        auto allGoals = goals();
+        auto gs = 0;
+        if(t == TeamType::AWAY) {
+            gs = std::accumulate(allGoals.begin(), allGoals.end(), 0, [&](auto& acc, const ScoringModel& g) {
+               if(teams_map()[g.scoring_team()] == m_teams.away && from_goal(g) == gt) {
+                   return acc + 1;
+               }
+               return acc;
+            });
+        } else {
+            gs = std::accumulate(allGoals.begin(), allGoals.end(), 0, [&](auto& acc, const ScoringModel& g) {
+               if(teams_map()[g.scoring_team()] == m_teams.home && from_goal(g) == gt) {
+                   return acc + 1;
+               }
+               return acc;
+            });
+        }
+        return gs;
     }
 }
 
@@ -304,7 +327,6 @@ int GameModel::shots_by(GameModel::TeamType t) const
             return acc + period.home;
         });
     }
-    std::cout << "Shots by in GameModel: " << shots << std::endl;
     return shots;
 }
 
@@ -530,4 +552,14 @@ std::string to_string(GamePeriod p)
         break;
     }
     return res;
+}
+
+GoalType from_goal(const ScoringModel &g)
+{
+    switch(g.m_strength) {
+        case Strength::SHOOTOUT:
+            return GoalType::SO;
+        default:
+            return GoalType::Game;
+    }
 }

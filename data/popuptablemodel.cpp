@@ -2,7 +2,6 @@
 
 PopupTableModel::PopupTableModel(QObject* parent) : QAbstractTableModel(parent)
 {
-
 }
 
 int PopupTableModel::rowCount(const QModelIndex &parent) const
@@ -22,11 +21,21 @@ QVariant PopupTableModel::data(const QModelIndex &index, int role) const
     } else {
         if(role == Qt::DisplayRole) {
             if(auto col = index.column(); col == 0 && index.row() < ColLength) {
+                if(auto value = gameStats[index.row()]; value > 0.0 && index.column() > 0) {
+                    auto valueString = QString("+%1").arg(value);
+                    return valueString;
+                }
                 return gameStats[index.row()];
             } else {
+                if(auto value = trendStats[index.row()]; value > 0.0 && index.column() > 0) {
+                    auto valueString = QString("+%1").arg(value);
+                    return valueString;
+                }
                 return trendStats[index.row()];
             }
         }
+        if (role == Qt::TextAlignmentRole )
+            return Qt::AlignCenter;
     }
     return QVariant{};
 }
@@ -39,8 +48,8 @@ QVariant PopupTableModel::headerData(int section, Qt::Orientation orientation, i
             else if(section == 1) return QString{"Trend stats"};
         } else {
             switch(section) {
-                case 0: return QString{"PP"};
-                case 1: return QString{"PK"};
+                case 0: return QString{"PP%"};
+                case 1: return QString{"PK%"};
                 case 2: return QString{"GF"};
                 case 3: return QString{"GA"};
                 case 4: return QString{"SF"};
@@ -56,4 +65,10 @@ void PopupTableModel::populate_data(QString team, ColumnData gameData, ColumnDat
     this->team = team;
     this->gameStats = gameData;
     this->trendStats = trendData;
+
+    gameStats[0] *= 100.0;
+    gameStats[1] *= 100.0;
+
+    trendStats[0] *= 100.0;
+    trendStats[1] *= 100.0;
 }

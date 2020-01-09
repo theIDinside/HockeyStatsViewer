@@ -1,8 +1,8 @@
 #include "teamstats.h"
 #include <algorithm>
 #include <list>
-#include "iterators.h"
 #include "data/gamestatistics.h"
+#include <QDebug>
 
 CRange TeamStats::games_range_from_back(std::size_t amt) const
 {
@@ -105,12 +105,11 @@ std::vector<double> TeamStats::goals_for_avg(TeamStats::Span span) const
     if(m_gamesPlayed.size() < static_cast<std::size_t>(span) * 2 && span != Span::Season) {
 
     } else if(span == Span::Season) {
-        auto games = lastGames(Span::Season);
-        auto goalsMade = 0;
-        for(const auto g_ptr : games) {
-            goalsMade += g_ptr->goals_by(g_ptr->get_team_type(m_team));
-        }
-        auto average = static_cast<double>(goalsMade) / static_cast<double>(games.size());
+        auto goals = std::accumulate(m_gamesPlayed.cbegin(), m_gamesPlayed.cend(), 0, [&](auto& acc, const GameModel& game) {
+            return acc + game.goals_by(game.get_team_type(m_team));
+        });
+        std::cout << "Total goals made by: " << m_team << " in " << m_gamesPlayed.size() << " games played: " << goals << " Average: " << (double)goals / (double)m_gamesPlayed.size() << std::endl;
+        auto average = static_cast<double>(goals) / static_cast<double>(m_gamesPlayed.size());
         spanAverage.push_back(average);
     } else {
         auto [begin, end] = games_range_from_back(span*2 - 1);
@@ -188,6 +187,23 @@ std::vector<double> TeamStats::shots_against_avg(TeamStats::Span span) const
         });
     }
     return spanAverage;
+}
+
+std::vector<double> TeamStats::gf_avg_last_x_games(std::size_t last_amount_games) const
+{
+    auto games_played = m_gamesPlayed.size();
+    std::vector<double> average{};
+    auto end = std::next(m_gamesPlayed.cbegin(), games_played - (last_amount_games - 1));
+    auto divisor = (games_played - (last_amount_games - 1));
+    for(; end <= m_gamesPlayed.cend(); ++end) {
+        double goals_made = std::accumulate(m_gamesPlayed.cbegin(), end, 0.0, [&](auto& acc, const GameModel& game) {
+            return acc + (double)game.goals_by(game.get_team_type(m_team));
+        });
+        double result = goals_made / (double)divisor;
+        ++divisor;
+        average.push_back(result);
+    }
+    return average;
 }
 
 std::vector<double> TeamStats::gf_avg_by_period(TeamStats::Span span, GamePeriod period) const
@@ -477,7 +493,7 @@ TeamStats::ResultRatio TeamStats::games_with_pp_goals() const
     auto p = std::make_pair(0, m_gamesPlayed.size());
     p.first = std::accumulate(m_gamesPlayed.cbegin(), m_gamesPlayed.cend(), 0, [&](auto& acc, const auto& game) {
        for(const auto& goal : game.goals()) {
-        if(team_scoring(goal) == m_team && goal.m_strength == Strength::POWER_PLAY) {
+        if(team_scoring(goal) == m_team && goal.strength() == Strength::POWER_PLAY) {
             return acc + 1;
         }
        }
@@ -491,7 +507,7 @@ TeamStats::ResultRatio TeamStats::games_with_pk_letups() const
     auto p = std::make_pair(0, m_gamesPlayed.size());
     p.first = std::accumulate(m_cbegin, m_cend, 0, [&](auto& acc, const auto& game) {
        for(const auto& goal : game.goals()) {
-           if(team_scoring(goal) != m_team && goal.m_strength == Strength::POWER_PLAY) return acc + 1;
+           if(team_scoring(goal) != m_team && goal.strength() == Strength::POWER_PLAY) return acc + 1;
        }
        return acc;
     });
@@ -589,49 +605,13 @@ TrendComparison TeamStats::compare_game_to_trend_stats(const GameModel &game) co
     TrendComparisonAccumulator comp{m_team};
     auto gameID = game.game_id();
     auto begin = m_gamesPlayed.cbegin();
-    auto end = std::find_if(m_gamesPlayed.cbegin(), m_gamesPlayed.cend(), [&](const auto& g) {
-        return g.game_id() == game.game_id();
-    });
+    auto end = std::find_if(m_gamesPlayed.cbegin(), m_gamesPlayed.cend(), [&](const auto& g) { return g.game_id() == game.game_id();});
     if(end == m_gamesPlayed.cend()) throw std::runtime_error("Could not find a game with id: " + std::to_string(gameID) + " that " + m_team + " played in");
-    int countGames = end - begin;
-    int itCount = 0;
     auto statsUpUntilGame = std::accumulate(begin, end, TrendComparisonAccumulator{m_team}, [&](auto& acc, const auto& g) {
-        itCount++;
-        if(g.shots_by(g.get_team_type(m_team)) > 100) {
-            std::cout << "Game "<< g.game_id() << " << seem to have more than 100 shots, which is strange" << std::endl;
-            auto shots = 0;
-            if(m_team == g.home_team()) {
-                for(const auto& period : g.m_shots_on_goal) {
-                   shots += period.home;
-                }
-            } else {
-                for(const auto& period : g.m_shots_on_goal) {
-                   shots += period.away;
-                }
-            }
-            std::cout << "Total tally of shots: " << shots << std::endl;
-        }
-        acc.push_game_stats(GameStatistics::from(m_team, g));
-        /*  push_game_stats(GameStatistics&) does this...
-        auto teamType = g.get_team_type(acc.team);
-        auto oppType = g.get_opponent_team_type(acc.team);
-        acc.games_analyzed++;
-        acc.m_PK += g.pk_attempts(teamType);
-        acc.m_PP += g.powerPlayAttempts(teamType);
-        acc.m_GF += g.goals_by(teamType);
-        acc.m_GA += g.goals_by(oppType);
-        acc.m_SF += g.shots_by(teamType);
-        acc.m_SA += g.shots_by(oppType);
-        acc.m_PPG += g.powerPlayGoals(teamType);
-        acc.m_PKG += g.penaltyKillGoals(teamType);
-        */
+        acc.push_game_stats( GameStatistics::from(m_team, g) );
         return acc;
     });
-
-    std::cout << "It count was: " << itCount << ". Games Analyzed was supposed to be: " << countGames;
-
     auto gamestats = GameStatistics::from(m_team, game);
-
     return TrendComparison{statsUpUntilGame, gamestats};
 }
 
@@ -661,9 +641,4 @@ std::vector<GameInfoModel> last_opponents_game_info(const TeamStats& ts, int cou
     });
     std::reverse(opponents.begin(), opponents.end());
     return opponents;
-}
-
-std::string team_scoring(const ScoringModel &score_model)
-{
-    return teams_map()[score_model.scoring_team()];
 }

@@ -5,6 +5,12 @@
 #include <unordered_map>
 std::pair<std::optional<std::string>, std::optional<std::string>> convertAssistStrings(const std::string& first, const std::string& second);
 
+enum GoalType {
+    Game,
+    SO,
+    Any
+};
+
 enum Strength {
     EVEN,
     EVEN_PENALTY_SHOT,
@@ -24,11 +30,14 @@ class ScoringModel
 public:
 
     friend std::string team_scoring(const ScoringModel& score_model);
+    friend GoalType from_goal(const ScoringModel& g);
     static std::unordered_map<std::string, Strength> StringToEnumMap;
     static Strength convert_strength_string(const std::string& str);
 
     using Assists = std::pair<std::optional<std::string>, std::optional<std::string>>;
     using Assist = std::optional<std::string>;
+
+private:
     int m_goal_number;
     GameTime m_time;
     Strength m_strength;
@@ -37,6 +46,7 @@ public:
     Assist m_firstAssist;
     Assist m_secondAssist;
 
+public:
     ScoringModel();
 
     ScoringModel(int goal_number, GameTime gameTime, Strength strength, const std::string& scoring_team, const std::string& goal_scorer, Assist first, Assist second);
@@ -46,6 +56,7 @@ public:
     ScoringModel& operator=(const ScoringModel& rhs);
     ~ScoringModel() {}
 
+    Strength strength() const;
     int goal_number() const;
     int period_number() const;
     GameTime scoring_time() const;

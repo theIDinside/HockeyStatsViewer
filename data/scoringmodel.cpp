@@ -76,6 +76,11 @@ ScoringModel& ScoringModel::operator=(const ScoringModel &rhs)
     return *this;
 }
 
+Strength ScoringModel::strength() const
+{
+    return m_strength;
+}
+
 int ScoringModel::goal_number() const
 {
     return m_goal_number;

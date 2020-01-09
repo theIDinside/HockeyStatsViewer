@@ -7,8 +7,8 @@ LastFiveGamesTab::LastFiveGamesTab(QWidget* parent) : TeamStatsTab(parent)
     lastFiveAway->setFixedHeight(300);
     lastFiveHome->setFixedHeight(300);
     m_layout.setAlignment(Qt::AlignTop | Qt::AlignCenter);
-    m_layout.addWidget(lastFiveHome, 0, 0);
-    m_layout.addWidget(lastFiveAway, 0, 1);
+    m_layout.addWidget(lastFiveAway, 0, 0);
+    m_layout.addWidget(lastFiveHome, 0, 1);
     setLayout(&m_layout);
 }
 
@@ -66,4 +66,9 @@ void LastFiveGamesTab::register_connections(MainWindow &window)
 {
     lastFiveAway->register_connections(window);
     lastFiveHome->register_connections(window);
+}
+
+void LastFiveGamesTab::set_chart_title_string_prefix(QString string)
+{
+    qDebug() << "virtual member function set_chart_title_string_prefix() is unimplemented";
 }

@@ -58,15 +58,6 @@ std::vector<GameModel> MDbConnection::getGames(const std::string &teamNameQuery)
         shotsOnGoal.push_back(firstPeriod);
         shotsOnGoal.push_back(secondPeriod);
         shotsOnGoal.push_back(thirdPeriod);
-        auto shotsHome = std::accumulate(shotsOnGoal.begin(), shotsOnGoal.end(), 0, [&](auto& acc, const auto period) {
-           return acc + period.home;
-        });
-        auto shotsAway = std::accumulate(shotsOnGoal.begin(), shotsOnGoal.end(), 0, [&](auto& acc, const auto period) {
-            return acc + period.away;
-        });
-        assert(shotsHome < 100);
-        assert(shotsAway < 100);
-        std::cout << "Shots home/shots away" << shotsHome << "/" << shotsAway << std::endl;
         auto teamWon = d["teamWon"].get_utf8().value.to_string();
         IntResults finalResult{d["finalResult"]["home"].get_int32(), d["finalResult"]["away"].get_int32()};
         IntResults faceOffWins{d["faceOffWins"]["home"].get_int32(), d["faceOffWins"]["away"].get_int32()};
@@ -126,7 +117,7 @@ std::vector<GameInfoModel> MDbConnection::getTodaysGames()
     auto cursor = collection.find(query.view());
     auto docs_found = 0;
     for(auto doc : cursor) {
-          std::cout << bsoncxx::to_json(doc) << std::endl;
+          std::cout << "Today's games:\n" << bsoncxx::to_json(doc) << std::endl;
           docs_found++;
 
           int gameID = doc["gameID"].get_int32().value;
@@ -155,15 +146,6 @@ GameModel MDbConnection::get_game(int gameID)
         shotsOnGoal.push_back(firstPeriod);
         shotsOnGoal.push_back(secondPeriod);
         shotsOnGoal.push_back(thirdPeriod);
-        auto shotsHome = std::accumulate(shotsOnGoal.begin(), shotsOnGoal.end(), 0, [&](auto& acc, const auto period) {
-           return acc + period.home;
-        });
-        auto shotsAway = std::accumulate(shotsOnGoal.begin(), shotsOnGoal.end(), 0, [&](auto& acc, const auto period) {
-            return acc + period.away;
-        });
-        std::cout << "Shots home/shots away" << shotsHome << "/" << shotsAway << std::endl;
-        assert(shotsHome < 100);
-        assert(shotsAway < 100);
         auto teamWon = d["teamWon"].get_utf8().value.to_string();
         IntResults finalResult{d["finalResult"]["home"].get_int32(), d["finalResult"]["away"].get_int32()};
         IntResults faceOffWins{d["faceOffWins"]["home"].get_int32(), d["faceOffWins"]["away"].get_int32()};
