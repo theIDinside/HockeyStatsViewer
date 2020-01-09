@@ -22,13 +22,13 @@
 	to be developed first, so one can check off boxes of what has been implemented? Yes, that sounds good.
 
 
-### Features to add / change
+## Features to add / change
 
 - [x] PDO stats
 - [ ] Corsi stats
 - [ ] Live Result analysis
 - [ ] Adjust EN goal stats, the empty net let ups need to be adjusted to show games where goalie was pulled. If stats say for example 
-	  (currently) 32%, this might count for games where the goalie was *not* pulled (usually when deficit is greater than 2 goals), therefore, this <br>
+	  (currently) 32%, this might count for games where the goalie was *not* pulled (usually when deficit is greater than 2 goals), therefore, this
       make the stat not really show the truthyness of how often a goal is let up/made, when it comes to Empty Net scoring.
 - [x] Make sure that GF/GA statistics do not account for Shootout goals (which it currently *does*).
 - [ ] Distribution analysis of goals made, w/ respect to time. We can create a chart, that displays in what "regions" of game time where most goals are scored / let up, instead of just to static "by period" statistic.
@@ -52,3 +52,22 @@ PDO			=>
 
 For most of these raw stats, one can do per-period analysis over a span of games to determine
 in what period on average the teams perform best and worse.
+
+## Current UI & Stats viewing
+The charts with multiple lines in them, (more than two), show both a 5-game span average statistic, which consists (as the name suggests)
+an average of a statistic over the last 5 games at that time. So a goals for, shows the 5-game span average of a statistic, before that game. 
+Along with that data, the season average before that game is also displayed. So the values that are at X=4, is what the *current* average is
+for respective category.
+
+![Tab displaying goals for/against/total, per 5-game span average, with also showing the current season average at that date for comparison. Also displays a
+table with data of how many games empty net goals were scored and let up, respectively. These only are in respect to games won in Regulation, 
+therefore not in over time nor shootout.](./docs/imgs/tab-goals.png)
+![Special team statistics, some with 5 game span average mixed with the season average. Not all charts are fully implemented with the corresponding season average yet.](./docs/imgs/tab-specialteams.png)
+![Division stats. Shows stats vs division of opponent. One can see the selected game in the list box to the left (which controls what data is displayed in all tabs.
+The data displayed in this tab, is all season averages, there is no 5-game span average, as inter-division games are much more rare, than intra division.](./docs/imgs/tab-divisionstats.png)
+![Period stats. These charts displays period averages, over a 5-game span average, over the last 5 games.](./docs/imgs/tab-periodstats.png)
+![Last 5 games. This tab will show some analysis of the last 5 games played. It currently shows a custom widget that displays whether or not
+the a game was won or lost (green/red W/L). When clicked, these show a pop up window, that will display some statistics of the game, in comparison to the 
+season trend. This way, we can determine if Team A or B had a better game, in comparison to it's trend it has been having, thus we can tell if Team A won,
+because they played better, or because Team B just played so much worse, or a mixture of all combinations. An image of this popup is displayed further down.](./docs/imgs/tab-last5games.png)
+![Last 5 game pop up](./docs/imgs/last5games-gamepopup.png)
