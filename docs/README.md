@@ -25,9 +25,9 @@
 ## Features to add / change
 
 Some definitions of Types (in the docs only)
-- <T> GameTime
-- <A:B> Standing 
-- <S> Statistic
+- T GameTime
+- A:B Standing 
+- S Statistic
 
 - [x] PDO stats
 - [ ] Corsi stats
