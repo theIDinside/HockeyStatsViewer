@@ -98,3 +98,7 @@ season trend. This way, we can determine if Team A or B had a better game, in co
 because they played better, or because Team B just played so much worse, or a mixture of all combinations. An image of this popup is displayed further down
 
 ![Last 5 game pop up](./imgs/last5games-gamepopup.png)
+
+![Comparison of stats data in application to those of nhl.com at 7th of January 2020](./imgs/validation_of_stats-MTL_Comparison_to_NHL.COM.png)
+This shows that our application is indeed displaying the "correct" data. The NHL.com site has the values rounded down to 1 decimal, which we can clearly establish from the image
+represents the values we display in our app.
