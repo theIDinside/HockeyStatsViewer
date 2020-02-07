@@ -2,3 +2,7 @@ build-debug build-release
 build-debug
 build-release
 *.swp
+build build-debug build-release
+build
+vscode
+.vscode

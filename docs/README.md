@@ -24,9 +24,22 @@
 
 ## Features to add / change
 
+Some definitions of Types (in the docs only)
+- <T> GameTime
+- <A:B> Standing 
+- <S> Statistic
+
 - [x] PDO stats
 - [ ] Corsi stats
-- [ ] Live Result analysis
+- [ ] Live Result analysis. Examples of questions posed & answers:
+	- How many games were won/lost after standing A:B @ T. Permutations: Season & Span of X games, Home/Away
+	- How many games were more goals scored after standing A:B @ T. Permutations: Season/Span of X games & Home/Away
+	- How many games were more goals let up after standing A:B @ T. Permutations: Season/Span of X games & Home/Away
+- [ ] Ask questions about a S, and outcomes after it being true, i.e.
+	- How many games were won/lost after winning/losing period 1, 2, 3 (S=Period 1 Wins, T=Period 1, for example)
+	- What has been required to be min GF, for team to win (and how often has that been true)
+	- What has bene required to be min GA, for team to lose (and how often has that been true)
+	- Answering similar questions like this, we should be able to "cut out" a path of likeliness, of a specific out come. Maybe.
 - [ ] Adjust EN goal stats, the empty net let ups need to be adjusted to show games where goalie was pulled. If stats say for example 
 	  (currently) 32%, this might count for games where the goalie was *not* pulled (usually when deficit is greater than 2 goals), therefore, this
       make the stat not really show the truthyness of how often a goal is let up/made, when it comes to Empty Net scoring.
@@ -35,6 +48,8 @@
 - [ ] Add ability to hide individual series
 - [ ] Add ability to "mark" series from different charts (that has to be at least tangientially related) so that comparisons can be made to, perhaps be shown in a popup of sorts.
 - [ ] Add a user interface / console that interfaces with the node application that scrapes the stats data, perhaps initially just show progress of scraping to begin with.
+- [ ] Add markers for where the data points in the chart actually exists/lives. Since we are using a line diagram, the lines are really just visualization, for the mental model, meaning, so it's easier to spot if trend is going good or bad. But actually marking the data point locations is also useful. The callout currently works, but it's a bit cumbersome to actually having to click/set them.
+
 
 ### Statistics and Trend specification
 
