@@ -8,7 +8,7 @@ class GoalsTab : public TeamStatsTab
 {
     Q_OBJECT
 public:
-    GoalsTab(QWidget* parent=nullptr);
+    explicit GoalsTab(QWidget* parent=nullptr);
     ~GoalsTab() {
         delete pGoalsFor;
         delete pGoalsAgainst;
@@ -27,4 +27,9 @@ private:
     // TeamStatsTab interface
 public:
 
+
+    // TeamStatsTab interface
+private:
+    void hide_series_impl(SeriesType SType) override;
+    void show_series_impl(SeriesType SType) override;
 };

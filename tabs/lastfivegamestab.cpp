@@ -72,3 +72,13 @@ void LastFiveGamesTab::set_chart_title_string_prefix(QString string)
 {
     qDebug() << "virtual member function set_chart_title_string_prefix() is unimplemented";
 }
+
+void LastFiveGamesTab::hide_series_impl(SeriesType SType)
+{
+    qDebug() << "Virtual member function: void LastFiveGamesTab::hide_series_impl(SeriesType SType) not implemented";
+}
+
+void LastFiveGamesTab::show_series_impl(SeriesType SType)
+{
+    qDebug() << "void LastFiveGamesTab::show_series_impl(SeriesType SType) not yet implemented";
+}

@@ -1,8 +1,11 @@
-#include "teamstats.h"
+
+// System headers. These can be removed, as pre compiled headers are used in CMakeLists.txt
 #include <algorithm>
+
+// Other headers
 #include <list>
-#include "data/gamestatistics.h"
 #include <QDebug>
+#include "teamstats.h"
 
 CRange TeamStats::games_range_from_back(std::size_t amt) const
 {
@@ -98,7 +101,7 @@ std::vector<const GameModel *> TeamStats::lastGames(std::size_t gameCount) const
     return games;
 }
 
-std::vector<double> TeamStats::goals_for_avg(TeamStats::Span span) const
+std::vector<double> TeamStats::goals_for_avg(Span span) const
 {
     std::vector<double> spanAverage{};
     spanAverage.reserve(span);
@@ -108,7 +111,6 @@ std::vector<double> TeamStats::goals_for_avg(TeamStats::Span span) const
         auto goals = std::accumulate(m_gamesPlayed.cbegin(), m_gamesPlayed.cend(), 0, [&](auto& acc, const GameModel& game) {
             return acc + game.goals_by(game.get_team_type(m_team));
         });
-        std::cout << "Total goals made by: " << m_team << " in " << m_gamesPlayed.size() << " games played: " << goals << " Average: " << (double)goals / (double)m_gamesPlayed.size() << std::endl;
         auto average = static_cast<double>(goals) / static_cast<double>(m_gamesPlayed.size());
         spanAverage.push_back(average);
     } else {
@@ -121,7 +123,7 @@ std::vector<double> TeamStats::goals_for_avg(TeamStats::Span span) const
     return spanAverage;
 }
 
-std::vector<double> TeamStats::goals_against_avg(TeamStats::Span span) const
+std::vector<double> TeamStats::goals_against_avg(Span span) const
 {
     std::vector<double> spanAverage{};
     spanAverage.reserve(span);
@@ -145,7 +147,7 @@ std::vector<double> TeamStats::goals_against_avg(TeamStats::Span span) const
     return spanAverage;
 }
 
-std::vector<double> TeamStats::shots_for_avg(TeamStats::Span span) const
+std::vector<double> TeamStats::shots_for_avg(Span span) const
 {
     std::vector<double> spanAverage{};
     spanAverage.reserve(span);
@@ -167,7 +169,7 @@ std::vector<double> TeamStats::shots_for_avg(TeamStats::Span span) const
     return spanAverage;
 }
 
-std::vector<double> TeamStats::shots_against_avg(TeamStats::Span span) const
+std::vector<double> TeamStats::shots_against_avg(Span span) const
 {
     std::vector<double> spanAverage{};
     spanAverage.reserve(span);
@@ -206,7 +208,17 @@ std::vector<double> TeamStats::gf_avg_last_x_games(std::size_t last_amount_games
     return average;
 }
 
-std::vector<double> TeamStats::gf_avg_by_period(TeamStats::Span span, GamePeriod period) const
+std::vector<GameModel> TeamStats::get_games_which_had_score(int team, int opponent) const
+{
+    std::vector<GameModel> results{};
+
+    std::copy_if(m_gamesPlayed.cbegin(), m_gamesPlayed.cend(), std::back_inserter(results), [&](const GameModel& game) {
+        return game.had_standing(m_team, team, opponent).has_value();
+    });
+    return results;
+}
+
+std::vector<double> TeamStats::gf_avg_by_period(Span span, GamePeriod period) const
 {
     std::vector<double> gfAverageByPeriod{};
     if(m_gamesPlayed.size() < static_cast<std::vector<double>::size_type>(span) * 2 && span != Season) {
@@ -223,7 +235,7 @@ std::vector<double> TeamStats::gf_avg_by_period(TeamStats::Span span, GamePeriod
     return gfAverageByPeriod;
 }
 
-std::vector<double> TeamStats::ga_avg_by_period(TeamStats::Span span, GamePeriod period) const
+std::vector<double> TeamStats::ga_avg_by_period(Span span, GamePeriod period) const
 {
     std::vector<double> gaAverageByPeriod{};
     if(m_gamesPlayed.size() < static_cast<std::vector<double>::size_type>(span) * 2 && span != Season) {
@@ -240,7 +252,7 @@ std::vector<double> TeamStats::ga_avg_by_period(TeamStats::Span span, GamePeriod
     return gaAverageByPeriod;
 }
 
-std::vector<double> TeamStats::sf_avg_by_period(TeamStats::Span span, GamePeriod period) const
+std::vector<double> TeamStats::sf_avg_by_period(Span span, GamePeriod period) const
 {
     std::vector<double> sfAverageByPeriod{};
     if(m_gamesPlayed.size() < static_cast<std::vector<double>::size_type>(span) * 2 && span != Season) {
@@ -257,7 +269,7 @@ std::vector<double> TeamStats::sf_avg_by_period(TeamStats::Span span, GamePeriod
     return sfAverageByPeriod;
 }
 
-std::vector<double> TeamStats::sa_avg_by_period(TeamStats::Span span, GamePeriod period) const
+std::vector<double> TeamStats::sa_avg_by_period(Span span, GamePeriod period) const
 {
     std::vector<double> saAverageByPeriod{};
     if(m_gamesPlayed.size() < static_cast<std::vector<double>::size_type>(span) * 2 && span != Season) {
@@ -279,7 +291,7 @@ std::vector<double> TeamStats::sa_avg_by_period(TeamStats::Span span, GamePeriod
  * @param span
  * @return std::vector<double>
  */
-std::vector<double> TeamStats::pdo_game_average(TeamStats::Span span) const
+std::vector<double> TeamStats::pdo_game_average(Span span) const
 {
     std::vector<double> spanPDO{};
     if(m_gamesPlayed.size() < static_cast<std::vector<double>::size_type>(span) * 2 && span != Span::Season) {
@@ -305,7 +317,7 @@ std::vector<double> TeamStats::pdo_game_average(TeamStats::Span span) const
  * @param span
  * @return
  */
-std::vector<double> TeamStats::pdo(TeamStats::Span span) const
+std::vector<double> TeamStats::pdo(Span span) const
 {
     std::vector<double> spanPDO{};
     if(m_gamesPlayed.size() <  static_cast<std::vector<double>::size_type>(span) * 2 && span != Span::Season) {
@@ -380,7 +392,7 @@ TeamStats::ResultRatio TeamStats::losses_against_division(const std::string &div
     return std::make_pair((attempts-wins), attempts);
 }
 
-std::vector<TeamStats::ResultRatio> TeamStats::special_teams(TeamStats::Span span, GameModel::SpecialTeamType sp_type) const
+std::vector<TeamStats::ResultRatio> TeamStats::special_teams(Span span, GameModel::SpecialTeamType sp_type) const
 {
     std::vector<std::pair<int, int>> spanSpecialTeams{};
     if(m_gamesPlayed.size() < static_cast<std::vector<double>::size_type>(span) && span != Span::Season) {
@@ -407,7 +419,7 @@ std::vector<TeamStats::ResultRatio> TeamStats::special_teams(TeamStats::Span spa
     return spanSpecialTeams;
 }
 
-std::vector<double> TeamStats::special_team_efficiency(TeamStats::Span span, GameModel::SpecialTeamType sp_type) const
+std::vector<double> TeamStats::special_team_efficiency(Span span, GameModel::SpecialTeamType sp_type) const
 {
     auto specialTeamsOverSpan = special_teams(span, sp_type);
     std::vector<double> spSpan{};
@@ -421,7 +433,7 @@ std::vector<double> TeamStats::special_team_efficiency(TeamStats::Span span, Gam
     return spSpan;
 }
 
-std::vector<double> TeamStats::times_in_pp_game_average(TeamStats::Span span) const {
+std::vector<double> TeamStats::times_in_pp_game_average(Span span) const {
     std::vector<double> spanAverage{};
     if(m_gamesPlayed.size() < static_cast<std::vector<double>::size_type>(span) && span != Span::Season) {
 
@@ -436,7 +448,7 @@ std::vector<double> TeamStats::times_in_pp_game_average(TeamStats::Span span) co
     return spanAverage;
 }
 
-std::vector<double> TeamStats::times_in_pk_game_average(TeamStats::Span span) const {
+std::vector<double> TeamStats::times_in_pk_game_average(Span span) const {
     std::vector<double> spanAverage{};
     if(m_gamesPlayed.size() < static_cast<std::vector<double>::size_type>(span) && span != Span::Season) {
 
@@ -539,7 +551,7 @@ std::pair<int, int> TeamStats::wins_after_standing(int team, int opponent)
         for(const auto& game : m_gamesPlayed) {
             auto teamType = game.get_team_type(m_team);
             if(teamType == GameModel::TeamType::HOME) {
-                if(game.had_standing(team, opponent));
+                if(game.had_standing(m_team, team, opponent));
             } else {
 
             }
@@ -613,6 +625,19 @@ TrendComparison TeamStats::compare_game_to_trend_stats(const GameModel &game) co
     });
     auto gamestats = GameStatistics::from(m_team, game);
     return TrendComparison{statsUpUntilGame, gamestats};
+}
+
+std::vector<ScoringModel> TeamStats::get_all_goals_for() const
+{
+    std::vector<ScoringModel> GoalsFor;
+    for(const GameModel& game : m_gamesPlayed) {
+        for(const ScoringModel& g : game.goals()) {
+            if(team_scoring(g) == m_team) {
+                GoalsFor.push_back(g);
+            }
+        }
+    }
+    return GoalsFor;
 }
 
 std::vector<GameModel> get_games_of(std::shared_ptr<MDbConnection> connection, const std::string &team)

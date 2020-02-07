@@ -20,13 +20,13 @@ Strength ScoringModel::convert_strength_string(const std::string &str)
     }
     return StringToEnumMap[str];
 }
-
-ScoringModel::ScoringModel() : m_goal_number(-1), m_time{}, m_strength{Strength::EVEN}, m_scoring_team{""}, m_goal_scorer{""}, m_firstAssist{}, m_secondAssist{}
+// CONSTRUCTORS
+ScoringModel::ScoringModel() noexcept : m_goal_number(-1), m_time{}, m_strength{Strength::EVEN}, m_scoring_team{""}, m_goal_scorer{""}, m_firstAssist{}, m_secondAssist{}
 {
 
 }
 
-ScoringModel::ScoringModel(int goalNumber, GameTime gameTime, Strength strength, const std::string& scoringTeam, const std::string& goalScorer, Assist first, Assist second) :
+ScoringModel::ScoringModel(int goalNumber, GameTime gameTime, Strength strength, const std::string& scoringTeam, const std::string& goalScorer, Assist first, Assist second) noexcept :
     m_goal_number(goalNumber),
     m_time(gameTime),
     m_strength(strength),
@@ -38,7 +38,7 @@ ScoringModel::ScoringModel(int goalNumber, GameTime gameTime, Strength strength,
 
 }
 
-ScoringModel::ScoringModel(const ScoringModel &copy) :
+ScoringModel::ScoringModel(const ScoringModel &copy) noexcept :
     m_goal_number(copy.m_goal_number),
     m_time(copy.m_time),
     m_strength(copy.m_strength),
@@ -50,7 +50,7 @@ ScoringModel::ScoringModel(const ScoringModel &copy) :
 
 }
 
-ScoringModel::ScoringModel(ScoringModel &&m) :
+ScoringModel::ScoringModel(ScoringModel &&m) noexcept :
     m_goal_number(m.m_goal_number),
     m_time(m.m_time),
     m_strength(m.m_strength),
@@ -62,7 +62,7 @@ ScoringModel::ScoringModel(ScoringModel &&m) :
 
 }
 
-ScoringModel& ScoringModel::operator=(const ScoringModel &rhs)
+ScoringModel& ScoringModel::operator=(const ScoringModel &rhs) noexcept
 {
     if(this != &rhs) {
         this->m_goal_number = rhs.m_goal_number;

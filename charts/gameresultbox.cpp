@@ -8,7 +8,6 @@ QLineF connecting_line(const GameResultBox& a, const GameResultBox& b) {
 
 GameResultBox::GameResultBox() : m_font{}, sig_handle{this}
 {
-    setFlag(ItemIsMovable);
     m_font.setPointSize(25);
     QFontMetrics metrics(m_font);
     m_font.setPointSize(25);
@@ -59,7 +58,7 @@ void GameResultBox::set_gameid(int gameID)
     this->gameID = gameID;
 }
 
-const SignalsHandler *GameResultBox::get_handle()
+const SignalsHandler *GameResultBox::get_signal_handler()
 {
     return &sig_handle;
 }

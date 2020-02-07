@@ -1,9 +1,11 @@
 #pragma once
+// Other headers
 #include <QAbstractTableModel>
 #include <QObject>
+// System headers. These can be removed, as pre compiled headers are used in CMakeLists.txt
 #include <array>
 
-constexpr auto ColLength = 6;
+constexpr auto ColLength = 7;
 using ColumnData = std::array<double, ColLength>;
 using TableData = std::pair<ColumnData, ColumnData>;
 

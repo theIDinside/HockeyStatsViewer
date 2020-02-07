@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 
 #include "gamelistitemmodel.h"
 #include "mdbconnection.h"
@@ -9,7 +10,7 @@
 #include <QLabel>
 #include <QMainWindow>
 #include <QStringListModel>
-#include <memory>
+#include "data/gamestatistics.h"
 
 namespace Ui {
 class MainWindow;
@@ -29,12 +30,15 @@ public slots:
     void on_mGamesTodayListView_clicked(const QModelIndex &index);
     void on_mDatePicker_clicked(const QDate &date);
     void on_mUpdateCharts_clicked();
-
     void game_data_popup(int gameID);
+    void live_result_analysis_requested(int homescore, int awayscore, int period, int minutes);
 
 
 signals:
     void gameSelectionChanged(const TeamStats& home, const TeamStats& away);
+
+private slots:
+    void on_pushButton_clicked();
 
 private:
 

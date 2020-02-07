@@ -1,10 +1,12 @@
 #pragma once
+// System headers. These can be removed, as pre compiled headers are used in CMakeLists.txt
 #include <string>
-#include "gamemodel.h"
 
-class GameModel;
+// Other headers
+#include <data/gamemodel.h>
 
-struct GameStatistics {
+class GameStatistics {
+public:
     GameStatistics(int pk, int pp, int gf, int ga, int sf, int sa, int ppg, int pkg);
     GameStatistics(double pk, double pp, double gf, double ga, double sf, double sa, double ppg, double pkg);
     double m_PK;

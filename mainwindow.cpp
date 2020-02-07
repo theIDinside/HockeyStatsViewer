@@ -10,7 +10,9 @@
 #include "tabs/specialteamtab.h"
 #include <tabs/divisiontab.h>
 #include <tabs/lastfivegamestab.h>
+#include <tabs/liveresulttab.h>
 #include <tabs/periodtab.h>
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow), m_gamesToday{}
@@ -26,15 +28,12 @@ MainWindow::MainWindow(QWidget *parent) :
     specialTeamsScrollArea->setWidgetResizable(true);
     m_tabContainer->addTab(specialTeamsScrollArea, "Special Teams");
 
-
     QScrollArea* goalsTabScrollArea = new QScrollArea;
     goalsTabScrollArea->setLayout(new QVBoxLayout);
     auto goalsTab = new GoalsTab(m_tabContainer);
     goalsTabScrollArea->setWidget(goalsTab);
     goalsTabScrollArea->setWidgetResizable(true);
     m_tabContainer->addTab(goalsTabScrollArea, "Goals");
-
-//    m_tabContainer->addTab(scrollArea, "Scroll area");
 
     QScrollArea* divisionScrollArea = new QScrollArea;
     divisionScrollArea->setLayout(new QVBoxLayout);
@@ -58,6 +57,14 @@ MainWindow::MainWindow(QWidget *parent) :
     lastFiveScrollArea->setWidgetResizable(true);
     m_tabContainer->addTab(lastFiveScrollArea, "Last 5 games");
 
+    QScrollArea* liveResultScrollArea = new QScrollArea;
+    liveResultScrollArea->setLayout(new QVBoxLayout);
+    auto liveResultTab = new LiveResultTab(m_tabContainer);
+    liveResultTab->register_inputs_with_main(*this);
+    liveResultScrollArea->setWidget(liveResultTab);
+    liveResultScrollArea->setWidgetResizable(true);
+    m_tabContainer->addTab(liveResultScrollArea, "Live Result Analysis");
+
     auto frameLayout = new QVBoxLayout();
     frameLayout->setSpacing(0);
     frameLayout->setContentsMargins(0,0,0,0);
@@ -65,7 +72,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->mContentFrame->setLayout(frameLayout);
 
     // Resource management, used when destructing.
-    m_statsTabs << specialTeams << goalsTab << divisionTab << periodTab << lastFiveTab;
+    m_statsTabs << specialTeams << goalsTab << divisionTab << periodTab << lastFiveTab << liveResultTab;
 
     connectTabSignals();
     createMenu();
@@ -114,11 +121,6 @@ void MainWindow::on_mGamesTodayListView_clicked(const QModelIndex &index)
             std::cout << "Found no games!! " << retrievedData.toInt() << "."  << std::endl;
         }
     }
-
-
-    // TODO: Emit the gameID for the game clicked, to the appropriate signal
-    // TODO: Then request data from backend
-    // TODO: init charts, set various charts data from TeamStats object
 }
 
 void MainWindow::createMenu()
@@ -148,11 +150,8 @@ void MainWindow::createMenu()
 
 void MainWindow::connectTabSignals()
 {
-    // connect(this, &MainWindow::gameSelectionChanged, specialTeams, &TeamStatsTab::update_chart_data);
-    // connect(this, &MainWindow::gameSelectionChanged, goalsTab, &TeamStatsTab::update_chart_data);
-    for(auto tabPtr : m_statsTabs) {
+    for(auto tabPtr : m_statsTabs)
         connect(this, &MainWindow::gameSelectionChanged, tabPtr, &TeamStatsTab::update_chart_data);
-    }
 }
 
 std::pair<std::chrono::system_clock::time_point,std::chrono::system_clock::time_point>  day_range_from_QDate(const QDate& date) {
@@ -184,6 +183,9 @@ void MainWindow::on_mUpdateCharts_clicked()
 {
     std::cout << "Button clicked" << std::endl;
     popup_shown = !popup_shown;
+    for(auto tab : m_statsTabs) {
+        tab->hide_series(SeriesType::SeasonSeries);
+    }
     show_popup();
 }
 
@@ -216,31 +218,69 @@ void MainWindow::game_data_popup(int gameID)
                                              GSH.m_GF,
                                              GSH.m_GA,
                                              GSH.m_SF,
-                                             GSH.m_SA},
+                                             GSH.m_SA,
+                                             GSH.m_PP},
                                          ColumnData{
                                              TH.m_PP,
                                              TH.m_PK,
                                              TH.m_GF,
                                              TH.m_GA,
                                              TH.m_SF,
-                                             TH.m_SA});
+                                             TH.m_SA,
+                                             TH.m_PPT});
     TableData awayTable = std::make_pair(ColumnData{
                                              GSA.pp_efficiency(),
                                              GSA.pk_efficiency(),
                                              GSA.m_GF,
                                              GSA.m_GA,
                                              GSA.m_SF,
-                                             GSA.m_SA},
+                                             GSA.m_SA,
+                                             GSA.m_PP},
                                          ColumnData{
                                              TA.m_PP,
                                              TA.m_PK,
                                              TA.m_GF,
                                              TA.m_GA,
                                              TA.m_SF,
-                                             TA.m_SA});
+                                             TA.m_SA,
+                                             TA.m_PPT});
 
     popup->update_table_data_show(homeTeam, awayTeam, homeTable, awayTable);
     popup->exec();
+}
+
+void MainWindow::live_result_analysis_requested(int homescore, int awayscore, int period, int minutes)
+{
+    GameTime time{minutes, 1, period};
+    Standing standing{m_home.team_name(), m_away.team_name(), homescore, awayscore, time};
+    auto homeTeam = m_home.team_name();
+    auto awayTeam = m_away.team_name();
+
+    std::vector<GameModel> htgames;
+    std::vector<GameModel> atgames;
+
+    std::copy_if(m_home.get_games().cbegin(), m_home.get_games().cend(), std::back_inserter(htgames), [&](const GameModel& g){
+        return g.had_standing(homeTeam, homescore, awayscore).has_value();
+    });
+
+    std::copy_if(m_away.get_games().cbegin(), m_away.get_games().cend(), std::back_inserter(atgames), [&](const GameModel& g) { 
+        return g.had_standing(awayTeam, awayscore, homescore).has_value();
+    });
+
+    int hwon = 0, hlost = 0;
+    int hgf = 0, hga = 0;
+    float hgfa = 0.0, hgaa = 0.0;           
+    for(const auto& g : htgames) {
+        if(g.winning_team() == homeTeam) hwon++;
+        else hlost++;
+    }
+    for(const auto& g : atgames) {
+        
+    }
+
+    std::cout << "At time: " << time << ":\n";
+    std::cout << homeTeam << " had " << htgames.size() << " games with standing " << standing.mHome << "-" << standing.mAway << std::endl;
+    std::cout << awayTeam << " had " << atgames.size() << " games with standing " << standing.mAway << "-" << standing.mHome << std::endl;
 }
 
 void MainWindow::show_popup()
@@ -251,5 +291,12 @@ void MainWindow::show_popup()
     } else {
         // hide popup
         std::cout << "Hide popup window!" << std::endl;
+    }
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+    for(auto tab : m_statsTabs) {
+        tab->show_series(SeriesType::SeasonSeries);
     }
 }

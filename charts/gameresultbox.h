@@ -36,7 +36,7 @@ public:
     friend QLineF connecting_line(const GameResultBox& a, const GameResultBox& b);
 
     SignalsHandler sig_handle;
-    const SignalsHandler* get_handle();
+    const SignalsHandler* get_signal_handler();
 protected:
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
 

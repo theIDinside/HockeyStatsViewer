@@ -29,4 +29,10 @@ private:
 public:
     void update_chart_data(const TeamStats &home, const TeamStats &away) override;
     void set_chart_title_string_prefix(QString string) override;
+
+    // TeamStatsTab interface
+private:
+    void hide_series_impl(SeriesType SType) override;
+    void show_series_impl(SeriesType SType) override;
+
 };

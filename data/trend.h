@@ -1,8 +1,8 @@
 #pragma once
-#include "gamemodel.h"
 #include "gamestatistics.h"
-
+// System headers. These can be removed, as pre compiled headers are used in CMakeLists.txt
 #include <string>
+
 class GameStatistics;
 class TrendComparisonAccumulator
 {

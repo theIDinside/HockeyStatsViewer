@@ -62,6 +62,6 @@ void GameBoxesChart::update_data(const TeamStats &ts)
 void GameBoxesChart::register_connections(MainWindow &window)
 {
     for(auto& box : boxes) {
-        connect(box->get_handle(), &SignalsHandler::gameDataPopUp, &window, &MainWindow::game_data_popup);
+        connect(box->get_signal_handler(), &SignalsHandler::gameDataPopUp, &window, &MainWindow::game_data_popup);
     }
 }

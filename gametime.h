@@ -1,5 +1,7 @@
 #pragma once
+// System headers. These can be removed, as pre compiled headers are used in CMakeLists.txt
 #include <tuple>
+#include <iostream>
 
 struct Time {
 
@@ -54,7 +56,7 @@ public:
     bool operator==(const GameTime& rhs) const;
     bool operator<=(const GameTime& rhs) const;
     bool operator>=(const GameTime& rhs) const;
-
+    void fast_forward(int minutes);
     /**
      * @brief time_left_period
      * @return Time
@@ -62,4 +64,13 @@ public:
     Time period_time_left();
     Time game_time_left();
     int to_seconds() const;
+
+    std::string debug() const;
+    bool in_range_of(const GameTime& begin, const GameTime& end) const;
+    friend GameTime from_seconds(int seconds);
+
+    friend std::ostream& operator<<(std::ostream& os, const GameTime& gt) {
+        os << "P" << gt.m_period << " " << gt.m_time.m_minutes << ":" << gt.m_time.m_seconds;
+        return os;
+    }
 };

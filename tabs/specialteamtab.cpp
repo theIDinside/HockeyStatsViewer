@@ -28,7 +28,6 @@ SpecialTeamTab::SpecialTeamTab(QWidget* parent) : TeamStatsTab(parent), m_layout
 
 void SpecialTeamTab::update_chart_data(const TeamStats &home, const TeamStats &away)
 {
-    using Span = TeamStats::Span;
     using ST = GameModel::SpecialTeamType;
     using RType = LineChartRangeType;
     auto PPHome = home.special_team_efficiency(Span::Five, ST::POWERPLAY);
@@ -115,4 +114,13 @@ void SpecialTeamTab::set_chart_title_string_prefix(QString string)
 {
     for(auto& chart : chartPointers)
         chart->set_title(QString("%1 %2").arg(chart->get_title()).arg(string));
+}
+
+void SpecialTeamTab::hide_series_impl(SeriesType SType) {
+    qDebug() << "Virtual member function: void SpecialTeamTab::hide_series_impl(SeriesType SType) not implemented";
+}
+
+void SpecialTeamTab::show_series_impl(SeriesType SType)
+{
+    qDebug() << "void SpecialTeamTab::show_series_impl(SeriesType SType) not yet implemented";
 }

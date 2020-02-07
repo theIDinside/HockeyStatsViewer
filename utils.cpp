@@ -1,5 +1,4 @@
 #include "utils.h"
-
 auto timeZoneAdjustedTimePoint(int span) {
     auto now = std::chrono::system_clock::now();
     std::time_t current_time = std::chrono::system_clock::to_time_t(now);

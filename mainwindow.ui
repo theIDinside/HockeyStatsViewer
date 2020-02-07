@@ -71,7 +71,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QListView" name="listView"/>
+        <widget class="QComboBox" name="seriesDisplay"/>
        </item>
        <item>
         <widget class="QPushButton" name="mLoadGamesToday">
@@ -84,6 +84,13 @@
         <widget class="QPushButton" name="mUpdateCharts">
          <property name="text">
           <string>Update charts</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButton">
+         <property name="text">
+          <string>Show all series</string>
          </property>
         </widget>
        </item>

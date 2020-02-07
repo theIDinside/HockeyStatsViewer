@@ -1,11 +1,14 @@
-#include "linechart.h"
+// System headers. These can be removed, as pre compiled headers are used in CMakeLists.txt
 #include <algorithm>
 #include <iostream>
 #include <cmath>
-#include <QValueAxis>
-
 #include <unordered_map>
 #include <string>
+
+// Other headers
+#include <QValueAxis>
+#include "linechart.h"
+#include <cassert>
 
 static std::unordered_map<std::string, std::string> teams{};
 
@@ -47,22 +50,27 @@ std::string abbreviate_team_name(const std::string& name) {
 }
 
 
-LineChart::LineChart(std::string title, QWidget* parent) : QGraphicsView(new QGraphicsScene, parent), m_title(std::move(title)), m_chart(new QChart), m_tooltip(nullptr), m_series_data_home{}, m_series_data_away{}
+LineChart::LineChart(std::string title, QWidget* parent) :
+    QGraphicsView(new QGraphicsScene, parent),
+    m_title(std::move(title)), m_chart(new QChart),
+    m_tooltip(nullptr), m_series_data_home{}, m_series_data_away{}
 {
     setDragMode(QGraphicsView::NoDrag);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_chart->setTitle(m_title.c_str());
     m_chart->createDefaultAxes();
-    m_chart->setAnimationOptions(QChart::AllAnimations);
-    m_chart->setAnimationDuration(350);
+    m_chart->setAnimationOptions(QChart::SeriesAnimations);
+    m_chart->setAnimationDuration(150);
     scene()->addItem(m_chart);
     this->setMouseTracking(true);
     this->setMinimumHeight(275);
+    setRenderHint(QPainter::Antialiasing);
 }
 
 void LineChart::clear_and_update_new_data(const std::string &home, const std::string &away, std::vector<double> home_chart_data, std::vector<double> away_chart_data, LineChartRangeType type)
 {
+    constexpr auto PENWIDTH = 4.5;
     assert(home_chart_data.size() == away_chart_data.size() && "Both vectors of data must be of equal length");
     valueType = type;
     m_home_team = home.c_str();
@@ -84,11 +92,11 @@ void LineChart::clear_and_update_new_data(const std::string &home, const std::st
     QLineSeries *away_series = new QLineSeries;
 
     QPen ph(QColor(0,0,255));
-    ph.setWidthF(2.5);
+    ph.setWidthF(PENWIDTH);
     home_series->setPen(ph);
 
     QPen pa(QColor(0, 255, 0));
-    pa.setWidthF(2.5);
+    pa.setWidthF(PENWIDTH);
     away_series->setPen(pa);
     auto max_value = 0.0;
     auto min_value = 100.0;
@@ -131,6 +139,7 @@ void LineChart::clear_and_update_new_data(const std::string &home, const std::st
 
 void LineChart::clear_and_update_new_multi_series_data(const std::vector<std::string> &series_names, std::vector<std::vector<double> > series_vector, LineChartRangeType type)
 {
+    constexpr auto PENWIDTH = 3.5;
     assert(series_names.size() == series_vector.size() && "Series name vector must match amount of series, and vice versa");
     multi_series_names.clear();
     valueType = type;
@@ -138,9 +147,7 @@ void LineChart::clear_and_update_new_multi_series_data(const std::vector<std::st
     multi_series.clear();
     multi_series_names = series_names;
     m_chart->removeAllSeries();
-
-    auto tooltips = m_saved_tooltips;
-    for(auto ptr : tooltips) {
+    for(auto& ptr : m_saved_tooltips) {
         delete ptr;
     }
     m_saved_tooltips.clear();
@@ -165,7 +172,7 @@ void LineChart::clear_and_update_new_multi_series_data(const std::vector<std::st
         if(min_value >= 1.0 && type != LineChartRangeType::Percent) min_value-=0.3;
         max_value += 0.3;
         if(type == LineChartRangeType::Percent) {
-            max_value = (std::max(max_value, 50.0) > 55.0) ? 100.0 : 50.0;
+            max_value = (std::max(max_value, 50.0) > 51.0) ? 100.0 : 50.0;
         }
         m_series << lineSeries;
         m_chart->addSeries(lineSeries);
@@ -174,16 +181,71 @@ void LineChart::clear_and_update_new_multi_series_data(const std::vector<std::st
         m_chart->axes(Qt::Horizontal).first()->setRange(0, (double)series.size()-1);
         m_chart->axes(Qt::Vertical).first()->setRange(min_value, max_value);
         m_chart->setAcceptHoverEvents(true);
-        setRenderHint(QPainter::Antialiasing);
         connect(lineSeries, &QLineSeries::clicked, this, &LineChart::keepTooltip);
         connect(lineSeries, &QLineSeries::hovered, this, &LineChart::tooltip);
         seriesIndex++;
     }
+
+    for(auto& series : m_chart->series()) {
+        auto s = qobject_cast<QLineSeries*>(series);
+        auto p = s->pen();
+        p.setWidth(PENWIDTH);
+        s->setPen(p);
+    }
 }
 
-void LineChart::add_series(const std::string &home, const std::string &away, std::vector<double> home_series, std::vector<double> away_series)
+void LineChart::show_season_series()
 {
+    for(auto s : m_chart->series()) {
+        if(s->name().contains("Season") && !s->isVisible()) s->show();
+    }
+}
 
+void LineChart::show_span_series()
+{
+    for(auto s : m_chart->series()) {
+        if(auto n = s->name(); !n.contains("Season") && !n.contains("1") && !n.contains("2") && !n.contains("3") && !s->isVisible()) s->show();
+    }
+}
+
+void LineChart::show_period_series(int period)
+{
+    if(period >= 1 && period < 4) {
+        auto p = QString{"%1"}.arg(period);
+        for(auto s : m_chart->series()) {
+            if(auto n = s->name(); n.contains(p) && !s->isVisible()) s->show();
+        }
+    }
+}
+
+void LineChart::hide_season_series()
+{
+    for(auto s : m_chart->series()) {
+        if(s->name().contains("Season")) {
+            s->hide();
+        }
+    }
+}
+
+void LineChart::hide_span_series()
+{
+    for(auto s : m_chart->series()) {
+        if(auto seriesName = s->name(); !seriesName.contains("Season") && !seriesName.contains("1") && !seriesName.contains("2") && !seriesName.contains("3")) {
+            s->hide();
+        }
+    }
+}
+
+void LineChart::hide_period_series(int period)
+{
+    if(period >= 1 && period < 4) {
+        auto p = QString{"%1"}.arg(period);
+        for(auto s : m_chart->series()) {
+            if(auto seriesName = s->name(); seriesName.contains(p)) {
+                s->hide();
+            }
+        }
+    }
 }
 
 void LineChart::set_title(const std::string &title)
@@ -279,7 +341,6 @@ void LineChart::tooltip(QPointF point, bool state)
                     m_tooltip->show();
                 }
             } else if(name == "1" || name == "2" || name == "3") {
-                std::cout << "Index is: " << name.toStdString() << std::endl;
                 auto index = from_period_string(name.toStdString());
                 auto nearest_x = std::round(point.x());
                 auto nearest_y = multi_series[index][static_cast<std::size_t>(nearest_x)];

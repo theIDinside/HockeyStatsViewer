@@ -1,4 +1,6 @@
 #pragma once
+
+// System headers. These can be removed, as pre compiled headers are used in CMakeLists.txt
 #include <string>
 #include <ctime>
 #include <vector>
@@ -6,8 +8,10 @@
 #include <iostream>
 #include <set>
 #include <unordered_map>
+
 #include "scoringmodel.h"
-#include "trend.h"
+#include "standing.h"
+// #include "trend.h"
 #include "valueholder.h"
 
 using TeamNames = TeamsValueHolder<std::string>;
@@ -37,9 +41,6 @@ public:
         HOME,
         AWAY
     };
-
-
-
     static std::unordered_map<std::string, std::string> g_Teams;
     static std::set<std::string> g_TeamSet;
     static std::unordered_map<std::string, std::string> g_TeamDivision;
@@ -70,45 +71,15 @@ public:
         PENALTYKILL
     };
 
-    GameModel() :
-        m_game_id(0), m_teams{"", ""},
-        m_team_won{""}, m_date_played{},
-        m_date_played_time_t{}, m_shots_on_goal{{0,0},{0,0}, {0,0}},
-        m_final_result{0, 0}, m_face_off_wins{0, 0},
-        m_penalty_infraction_minutes{0,0}, m_hits{0,0},
-        m_blocked_shots{}, m_give_aways{}, m_goals{}
-    {
-        std::cout << "In GameModel default constructor..." << std::endl;
-    }
+    GameModel();
     GameModel(int id, const TeamNames& teams, const std::string& team_won,
               std::chrono::system_clock::time_point date_played, const std::vector<IntResults>& shots,
               IntResults final_result, IntResults FO, PowerPlay PP,
-              IntResults PIM, IntResults hits, IntResults blocked_shots, IntResults give_aways, std::vector<ScoringModel>&& scoringSummary);
+              IntResults PIM, IntResults hits, IntResults blocked_shots, IntResults give_aways, std::vector<ScoringModel>&& scoringSummary) noexcept;
 
     GameModel(const GameModel& copy);
     GameModel(GameModel&& copy);
-    GameModel& operator=(const GameModel& rhs) {
-        if(this != &rhs) {
-            m_game_id = rhs.m_game_id;
-            m_teams = rhs.m_teams;
-            m_team_won = rhs.m_team_won;
-            m_date_played = rhs.m_date_played;
-            m_date_played_time_t = {};
-            m_shots_on_goal.clear(); // Wow what a difficult bug to find this created, when I forgot to clear the vector.
-            std::copy(rhs.m_shots_on_goal.begin(), rhs.m_shots_on_goal.end(), std::back_inserter(m_shots_on_goal));
-            m_final_result = rhs.m_final_result;
-            m_face_off_wins = rhs.m_face_off_wins;
-            m_power_play = rhs.m_power_play;
-            m_penalty_infraction_minutes = rhs.m_penalty_infraction_minutes;
-            m_hits = rhs.m_hits;
-            m_blocked_shots = rhs.m_blocked_shots;
-            m_give_aways = rhs.m_give_aways;
-            m_init = true;
-            m_goals.clear();
-            std::copy(rhs.m_goals.cbegin(), rhs.m_goals.cend(), std::back_inserter(m_goals));
-        }
-        return *this;
-    }
+    GameModel& operator=(const GameModel& rhs);
     ~GameModel() {}
     bool is_set() const;
     bool set(int id, TeamNames teams, const std::string& team_won, std::vector<IntResults> shots, IntResults final_result, IntResults FO, PowerPlay PP, IntResults PIM, IntResults hits, IntResults blocked_shots, IntResults give_aways);
@@ -158,13 +129,12 @@ public:
     std::vector< std::tuple<int, int, GameTime> > get_scoring_progression() const;
 
     bool team_had_goal_difference(TeamType type, int diff) const;
-
-    bool had_standing(int home, int away, const GameTime& time = GameTime{}) const;
-
     std::optional<GameTime> team_had_deficit(const std::string& team, int diff) const;
     std::optional<GameTime> team_had_lead(const std::string& team, int diff) const;
-    std::optional<GameTime> had_standing(const std::string& team_name, int team, int opponent);
+    std::optional<GameTime> had_standing(const std::string& team_name, int team, int opponent) const;
+    bool had_standing_at_time(const std::string& team_name, int team, int opponent, GameTime time) const;
 
     std::vector<std::tuple<int, int, GameTime>> goals_made_after_time(const GameTime& time) const;
-    std::vector<std::tuple<int, int, GameTime>> goals_made_after_standing(std::pair<int, int> score) const;
+    std::vector<ScoringModel> goals_made_after_standing(const std::string& team, int teamscore, int opponent) const;
+    std::vector<ScoringModel> goals_after_standing_gametime(const std::string& team, int teamscore, int opponent) const;
 };

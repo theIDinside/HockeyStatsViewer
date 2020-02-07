@@ -36,7 +36,7 @@ void GoalsTab::update_chart_data(const TeamStats &home, const TeamStats &away)
     auto homeTeam = home.team_name();
     auto awayTeam = away.team_name();
 
-    auto HSGF = home.goals_for_avg(TeamStats::Span::Season);
+    auto HSGF = home.goals_for_avg(Span::Season);
     auto homeSeasonGF = home.season_avg_last_x_games(5, [&](auto teamName, auto begin, auto end, auto divisor) {
         double goals_made = std::accumulate(begin, end, 0.0, [&](auto& acc, const GameModel& game) {
             return acc + (double)game.goals_by(game.get_team_type(teamName), GoalType::Game);
@@ -118,4 +118,22 @@ void GoalsTab::set_chart_title_string_prefix(QString string)
 {
     for(auto& chart : chartPointers)
         chart->set_title(QString("%1 %2").arg(chart->get_title()).arg(string));
+}
+
+void GoalsTab::hide_series_impl(SeriesType SType)
+{
+    if(SType == SeriesType::SeasonSeries) {
+        for(auto p : chartPointers) {
+            p->hide_season_series();
+        }
+    }
+}
+
+void GoalsTab::show_series_impl(SeriesType SType)
+{
+    if(SType == SeriesType::SeasonSeries) {
+        for(auto p : chartPointers) {
+            p->show_season_series();
+        }
+    }
 }

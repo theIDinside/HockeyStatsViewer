@@ -1,16 +1,19 @@
 #pragma once
-#include "data/gamemodel.h"
-#include "data/gameinfomodel.h"
-
-#include <bsoncxx/builder/stream/document.hpp>
-#include <bsoncxx/json.hpp>
-#include <mongocxx/client.hpp>
-#include <mongocxx/instance.hpp>
+// System headers. These can be removed, as pre compiled headers are used in CMakeLists.txt
 #include <iostream>
 #include <vector>
 #include <tuple>
 #include <chrono>
 #include <optional>
+
+// Other headers
+#include "data/gamemodel.h"
+#include "data/gameinfomodel.h"
+#include <bsoncxx/builder/stream/document.hpp>
+#include <bsoncxx/json.hpp>
+#include <mongocxx/client.hpp>
+#include <mongocxx/instance.hpp>
+
 
 class MDbConnection
 {

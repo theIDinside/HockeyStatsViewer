@@ -1,5 +1,7 @@
 #pragma once
 #include <QList>
+
+// System headers. These can be removed, as pre compiled headers are used in CMakeLists.txt
 #include <string>
 #include <array>
 

@@ -1,9 +1,6 @@
 #include "mainwindow.h"
 #include "mdbconnection.h"
-#include <iostream>
-#include <optional>
 
-#include <string>
 #include <bsoncxx/json.hpp>
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
@@ -12,7 +9,6 @@
 #include <bsoncxx/builder/basic/array.hpp>
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/builder/basic/kvp.hpp>
-#include <iostream>
 
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_array;
@@ -21,9 +17,15 @@ using bsoncxx::builder::basic::make_document;
 #include <QApplication>
 #include <QDate>
 
+// System headers. These can be removed, as pre compiled headers are used in CMakeLists.txt
 #include <unordered_map>
 #include <set>
 #include <memory>
+#include <string>
+#include <iostream>
+#include <optional>
+
+// #include <instrumentation.h>
 
 
 int main(int argc, char *argv[])

@@ -56,19 +56,19 @@ void PeriodTab::update_chart_data(const TeamStats &home, const TeamStats &away)
     PeriodsSeries aSAAvg{};
 
     for(const auto& period : periodsToIterate) {
-        auto h_gfpAverage = home.gf_avg_by_period(TeamStats::Span::Five, period);
-        auto h_gapAverage = home.ga_avg_by_period(TeamStats::Span::Five, period);
-        auto h_sfpAverage = home.sf_avg_by_period(TeamStats::Span::Five, period);
-        auto h_sapAverage = home.sa_avg_by_period(TeamStats::Span::Five, period);
+        auto h_gfpAverage = home.gf_avg_by_period(Span::Five, period);
+        auto h_gapAverage = home.ga_avg_by_period(Span::Five, period);
+        auto h_sfpAverage = home.sf_avg_by_period(Span::Five, period);
+        auto h_sapAverage = home.sa_avg_by_period(Span::Five, period);
         hGFAvg.push_back(h_gfpAverage);
         hGAAvg.push_back(h_gapAverage);
         hSFAvg.push_back(h_sfpAverage);
         hSAAvg.push_back(h_sapAverage);
 
-        auto a_gfpAverage = away.gf_avg_by_period(TeamStats::Span::Five, period);
-        auto a_gapAverage = away.ga_avg_by_period(TeamStats::Span::Five, period);
-        auto a_sfpAverage = away.sf_avg_by_period(TeamStats::Span::Five, period);
-        auto a_sapAverage = away.sa_avg_by_period(TeamStats::Span::Five, period);
+        auto a_gfpAverage = away.gf_avg_by_period(Span::Five, period);
+        auto a_gapAverage = away.ga_avg_by_period(Span::Five, period);
+        auto a_sfpAverage = away.sf_avg_by_period(Span::Five, period);
+        auto a_sapAverage = away.sa_avg_by_period(Span::Five, period);
         aGFAvg.push_back(a_gfpAverage);
         aGAAvg.push_back(a_gapAverage);
         aSFAvg.push_back(a_sfpAverage);
@@ -89,4 +89,14 @@ void PeriodTab::set_chart_title_string_prefix(QString string)
 {
     for(auto& chart : chartPointers)
         chart->set_title(QString("%1 %2").arg(chart->get_title()).arg(string));
+}
+
+void PeriodTab::hide_series_impl(SeriesType SType)
+{
+    qDebug() << "Virtual member function: void PeriodTab::hide_series_impl(SeriesType SType) not implemented";
+}
+
+void PeriodTab::show_series_impl(SeriesType SType)
+{
+    qDebug() << "void PeriodTab::show_series_impl(SeriesType SType) not yet implemented";
 }

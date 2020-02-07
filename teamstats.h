@@ -1,21 +1,70 @@
 #pragma once
+// System headers. These can be removed, as pre compiled headers are used in CMakeLists.txt
+#include <vector>
 
+// Other headers
 #include "data/gameinfomodel.h"
 #include "data/gamemodel.h"
+#include "data/gamestatistics.h"
 #include "mdbconnection.h"
 #include <QBarSet>
-#include <vector>
+#include <data/standing.h>
 #include <data/trend.h>
 #include "iterators.h"
+#include "data/gamestatistics.h"
 
 using namespace QtCharts;
 using CRange = std::pair<std::vector<GameModel>::const_iterator, std::vector<GameModel>::const_iterator>;
-
+class GameStatistics;
 double goalsForAverage(std::list<const GameModel*>& gamesList);
 struct FinalResult;
 
 std::string team_scoring(const ScoringModel& score_model);
 
+enum Span : std::size_t {
+    Five=5,
+    Ten=10,
+    Season=81
+};
+
+enum DecidedIn {
+    DI_REG,
+    DI_OT,
+    DI_SO
+};
+
+struct Result {
+    int gameID;
+    int team, opponent;
+    DecidedIn decidedIn;
+    enum PlayedAt {
+        Home,
+        Away
+    } playedAt;
+    Result(int gameID, int team, int opponent, Result::PlayedAt playedAt) : gameID(gameID), team(team), opponent(opponent), playedAt(playedAt) {
+
+    }
+    Result(Result& c) : gameID(c.gameID), team(c.team), opponent(c.opponent), decidedIn(c.decidedIn) {}
+    ~Result() = default;
+    /*
+     * Pre-condition: The last goal of the game has to be passed to this function. Any other will result in UB.
+     */
+    void set_decided_in(const ScoringModel& last_goal_made) {
+        if(last_goal_made.strength() == Strength::SHOOTOUT) {
+            decidedIn = DecidedIn::DI_SO;
+            return;
+        }
+        else if(last_goal_made.period_number() == 4) {
+            decidedIn = DecidedIn::DI_OT;
+            return;
+        } else {
+            decidedIn = DecidedIn::DI_REG;
+        }
+    }
+    bool won() const { return team > opponent; }
+    bool atHome() const { return playedAt == Home; }
+    bool atAway() const { return playedAt == Away; }
+};
 
 class TeamStats
 {
@@ -25,12 +74,6 @@ public:
     using Attempts = int;
 
     using ResultRatio = std::pair<Successes, Attempts>;
-
-    enum Span : std::size_t {
-        Five=5,
-        Ten=10,
-        Season=81
-    };
 
     enum Division {
         Atlantic,
@@ -52,10 +95,10 @@ public:
 
     std::vector<const GameModel*> lastGames(std::size_t gameCount=5) const;                             // DONE
     // Span analysis
-    std::vector<double> goals_for_avg(TeamStats::Span span) const;                                      // DONE
-    std::vector<double> goals_against_avg(TeamStats::Span span) const;                                  // DONE
-    std::vector<double> shots_for_avg(TeamStats::Span span) const;                                      // DONE
-    std::vector<double> shots_against_avg(TeamStats::Span span) const;                                  // DONE
+    std::vector<double> goals_for_avg(Span span) const;                                      // DONE
+    std::vector<double> goals_against_avg(Span span) const;                                  // DONE
+    std::vector<double> shots_for_avg(Span span) const;                                      // DONE
+    std::vector<double> shots_against_avg(Span span) const;                                  // DONE
 
     // Returns season averages before each of last_amount_games games
     std::vector<double> gf_avg_last_x_games(std::size_t last_amount_games) const;
@@ -78,21 +121,39 @@ public:
         return average;
     }
 
+    std::vector<GameModel> get_games_with_standing(Standing standing) const;
+    std::vector<GameModel> get_games_which_had_score(int team, int opponent) const;
+
+    /* requires result type to be default constructable */
+    template<typename Result, typename Fn>
+    Result accumulate_game_stats(Fn fn) {
+        return std::accumulate(m_gamesPlayed.cbegin(), m_gamesPlayed.cend(), Result{}, fn);
+    }
+
+    template<typename Fn>
+    void for_each_game(Fn fn) {
+        for(const auto& game: m_gamesPlayed) fn(game);
+    }
+
+    ResultRatio analyze_season_with_standing(Standing standing) const;
+
     // Span analysis combined with predicate home/away
     std::vector<double> goals_for_avg_at(GameModel::TeamType type, Span = Span::Season) const;                               // TODO:
     std::vector<double> goals_against_avg_at(GameModel::TeamType type, Span = Span::Season) const;                           // TODO:
     std::vector<double> shots_for_avg_at(GameModel::TeamType type, Span = Span::Season) const;                               // TODO:
     std::vector<double> shots_against_avg_at(GameModel::TeamType type, Span = Span::Season) const;                           // TODO:
 
-    std::vector<double> gf_avg_by_period(TeamStats::Span span, GamePeriod period) const;
-    std::vector<double> ga_avg_by_period(TeamStats::Span span, GamePeriod period) const;
-    std::vector<double> sf_avg_by_period(TeamStats::Span span, GamePeriod period) const;
-    std::vector<double> sa_avg_by_period(TeamStats::Span span, GamePeriod period) const;
+    std::vector<double> gf_avg_by_period(Span span, GamePeriod period) const;
+    std::vector<double> ga_avg_by_period(Span span, GamePeriod period) const;
+    std::vector<double> sf_avg_by_period(Span span, GamePeriod period) const;
+    std::vector<double> sa_avg_by_period(Span span, GamePeriod period) const;
 
-    std::vector<double> pdo_game_average(TeamStats::Span span) const;                                   // DONE
-    std::vector<double> pdo(TeamStats::Span span) const;                                                // DONE
-    std::vector<double> corsi(TeamStats::Span span) const;                                              // TODO: implement
-    std::vector<double> corsi_average(TeamStats::Span span) const;                                      // TODO: implement
+
+
+    std::vector<double> pdo_game_average(Span span) const;                                   // DONE
+    std::vector<double> pdo(Span span) const;                                                // DONE
+    std::vector<double> corsi(Span span) const;                                              // TODO: implement
+    std::vector<double> corsi_average(Span span) const;                                      // TODO: implement
     ResultRatio wins_against_division(const std::string& division) const;                               // DONE
     ResultRatio losses_against_division(const std::string& div) const;                                  // DONE
     std::vector<ResultRatio> special_teams(Span span, GameModel::SpecialTeamType type) const;           // DONE
@@ -119,6 +180,8 @@ public:
     TrendComparison compare_game_to_trend_stats(const GameModel& game) const;
 
     friend std::vector<GameModel> get_games_of(std::shared_ptr<MDbConnection> connection, const std::string& team);
+
+    std::vector<ScoringModel> get_all_goals_for() const;
 
     // TODO: This obviously is not returning a vector of ints, but rather a vector of a at this point undefined struct (analysis data)
     std::vector<const GameModel*> games_before(int gameID) const;

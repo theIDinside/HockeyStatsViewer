@@ -1,18 +1,18 @@
+// System headers. These can be removed, as pre compiled headers are used in CMakeLists.txt
+#include <ctime>
+
+// Other headers
 #include "mdbconnection.h"
 #include "data/scoringmodel.h"
-
 #include "utils.h"
-
 #include <mongocxx/options/find.hpp>
 #include <bsoncxx/builder/basic/array.hpp>
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/builder/basic/kvp.hpp>
-
 #include <bsoncxx/json.hpp>
 #include <mongocxx/client.hpp>
 #include <mongocxx/stdx.hpp>
 #include <mongocxx/uri.hpp>
-#include <ctime>
 #include <iomanip>
 #include <cassert>
 

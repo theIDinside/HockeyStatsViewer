@@ -1,4 +1,6 @@
 #include "gamelistitemmodel.h"
+
+// System headers. These can be removed, as pre compiled headers are used in CMakeLists.txt
 #include <chrono>
 #include <ctime>
 

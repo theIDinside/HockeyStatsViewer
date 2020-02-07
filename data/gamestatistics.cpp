@@ -12,7 +12,7 @@ GameStatistics::GameStatistics(double pk, double pp, double gf, double ga, doubl
 
 }
 
-GameStatistics GameStatistics::from(const std::string& team, const GameModel &gm)
+GameStatistics GameStatistics::from(const std::string &team, const GameModel &gm)
 {
     auto team_t = gm.get_team_type(team);
     auto pp = gm.pp_attempts(team_t);

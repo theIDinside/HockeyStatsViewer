@@ -1,5 +1,7 @@
 #include "gamemodel.h"
 #include <stdexcept>
+
+// System headers. These can be removed, as pre compiled headers are used in CMakeLists.txt
 #include <iostream>
 #include <numeric>
 #include <algorithm>
@@ -79,9 +81,21 @@ std::string GameModel::getConference(const std::string &team)
     }
 }
 
+GameModel::GameModel() :
+    m_game_id(0), m_teams{"", ""},
+    m_team_won{""}, m_date_played{},
+    m_date_played_time_t{}, m_shots_on_goal{{0,0},{0,0}, {0,0}},
+    m_final_result{0, 0}, m_face_off_wins{0, 0},
+    m_penalty_infraction_minutes{0,0}, m_hits{0,0},
+    m_blocked_shots{}, m_give_aways{}, m_goals{}
+{
+    std::cout << "In GameModel default constructor..." << std::endl;
+}
+
+// CONSTRUCTORS 
 GameModel::GameModel(int id, const TeamNames& teams, const std::string& team_won, std::chrono::system_clock::time_point date_played, const std::vector<IntResults>& shots,
                      IntResults final_result, IntResults FO, PowerPlay PP, IntResults PIM,
-                     IntResults hits, IntResults blocked_shots, IntResults give_aways, std::vector<ScoringModel>&& scoringSummary) :
+                     IntResults hits, IntResults blocked_shots, IntResults give_aways, std::vector<ScoringModel>&& scoringSummary) noexcept :
     m_game_id(id), m_teams{teams},
     m_team_won{team_won}, m_date_played{date_played}, m_shots_on_goal{}, m_final_result{final_result},
     m_face_off_wins{FO}, m_power_play{PP},
@@ -114,6 +128,29 @@ GameModel::GameModel(GameModel &&copy) :
 {
     gameModelConstructedDebug++;
     // std::cout << "In GameModel move constructor... Constructed object " << gameModelConstructedDebug << " times" << "\n";
+}
+
+GameModel &GameModel::operator=(const GameModel &rhs) {
+    if(this != &rhs) {
+        m_game_id = rhs.m_game_id;
+        m_teams = rhs.m_teams;
+        m_team_won = rhs.m_team_won;
+        m_date_played = rhs.m_date_played;
+        m_date_played_time_t = {};
+        m_shots_on_goal.clear(); // Wow what a difficult bug to find this created, when I forgot to clear the vector.
+        std::copy(rhs.m_shots_on_goal.begin(), rhs.m_shots_on_goal.end(), std::back_inserter(m_shots_on_goal));
+        m_final_result = rhs.m_final_result;
+        m_face_off_wins = rhs.m_face_off_wins;
+        m_power_play = rhs.m_power_play;
+        m_penalty_infraction_minutes = rhs.m_penalty_infraction_minutes;
+        m_hits = rhs.m_hits;
+        m_blocked_shots = rhs.m_blocked_shots;
+        m_give_aways = rhs.m_give_aways;
+        m_init = true;
+        m_goals.clear();
+        std::copy(rhs.m_goals.cbegin(), rhs.m_goals.cend(), std::back_inserter(m_goals));
+    }
+    return *this;
 }
 
 bool GameModel::is_set() const
@@ -422,15 +459,6 @@ bool GameModel::team_had_goal_difference(GameModel::TeamType type, int diff) con
     return false;
 }
 
-bool GameModel::had_standing(int home, int away, const GameTime& time) const
-{
-    auto scoring = get_scoring_progression();
-    for(const auto&[a, h, gameTime] : scoring) {
-        if(away == a && home == h) return true;
-    }
-    return false;
-}
-
 std::optional<GameTime> GameModel::team_had_deficit(const std::string& team, int diff) const
 {
     auto scoring = get_scoring_progression();
@@ -467,19 +495,63 @@ std::optional<GameTime> GameModel::team_had_lead(const std::string& team, int di
     return {};
 }
 
-std::optional<GameTime> GameModel::had_standing(const std::string &team_name, int team, int opponent)
+std::optional<GameTime> GameModel::had_standing(const std::string &team_name, int team, int opponent) const
 {
     auto scoring = get_scoring_progression();
+    // if 0-0 is passed in, we return when the first goal was scored. Otherwise we will not find any 0-0 games when we search for them (since scoring only records goals, not actual standings).
+    if(team == 0 && opponent == 0) {
+        const auto& [away, home, time] = scoring[0];
+        return time;
+    }
     if(team_name == m_teams.away) {
         for(const auto& [away, home, time] : scoring) {
             if(team == away && opponent == home) return time;
         }
     } else {
         for(const auto& [away, home, time] : scoring) {
-            if(team == away && opponent == home) return time;
+            if(team == home && opponent == away) return time;
         }
     }
-    return {};
+        return {};
+    }
+
+bool GameModel::had_standing_at_time(const std::string &team_name, int team, int opponent, GameTime live_time) const
+{
+    auto scores = get_scoring_progression();
+    if(team == 0 && opponent == 0) { // find all games that had 0-0 at time live_time, which is true, if live_time is before the time of the first scored goal in game, gtime
+        const auto&[away, home, timeOfFirstGoal] = scores[0];
+        return live_time <= timeOfFirstGoal;
+    }
+    if(team_name == m_teams.home) {
+        for(auto idx = 0; idx < scores.size(); ++idx) {
+            const auto&[away, home, timeOfGoal] = scores[idx];
+            if(team == home && opponent == away) { // return true if game had score team-opponent at or before time live_time
+                if(timeOfGoal <= live_time && idx+1 == scores.size()) {
+                    return true;
+                } else {
+                    const auto& nextScore = scores[idx+1];
+                    const auto&[awayNext, homeNext, timeOfNextGoal] = nextScore;
+                    return live_time.in_range_of(timeOfGoal, timeOfNextGoal);
+                }
+            }            
+        }
+    } else if(team_name == m_teams.away) {
+        for(auto idx = 0; idx < scores.size(); ++idx) {
+            const auto&[away, home, timeOfGoal] = scores[idx];
+            if(team == away && opponent == home) {
+                if(timeOfGoal <= live_time && idx+1 == scores.size()) {
+                    return true;
+                } else {
+                    const auto& nextScore = scores[idx+1];
+                    const auto&[awayNext, homeNext, timeOfNextGoal] = nextScore;
+                    return live_time.in_range_of(timeOfGoal, timeOfNextGoal);
+                }
+            }
+        }
+    } else {
+        throw std::runtime_error("Team " + team_name + " does not play in this game");
+    }
+    return false;
 }
 
 std::vector<std::tuple<int, int, GameTime> > GameModel::goals_made_after_time(const GameTime &time) const

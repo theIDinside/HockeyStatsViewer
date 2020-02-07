@@ -10,6 +10,8 @@
 #include <QLineSeries>
 #include <QObject>
 #include <QWidget>
+
+// System headers. These can be removed, as pre compiled headers are used in CMakeLists.txt
 #include <memory>
 
 QT_BEGIN_NAMESPACE
@@ -40,7 +42,14 @@ public:
     LineChart(std::string title, QWidget* parent = nullptr);
     void clear_and_update_new_data(const std::string& home, const std::string& away,  std::vector<double> home_chart_data, std::vector<double> away_chart_data, LineChartRangeType type=LineChartRangeType::Value);
     void clear_and_update_new_multi_series_data(const std::vector<std::string>& series_names, std::vector<std::vector<double>> series_vector, LineChartRangeType type=LineChartRangeType::Value);
-    void add_series(const std::string& home, const std::string& away, std::vector<double> home_series, std::vector<double> away_series);
+
+    void show_season_series();
+    void show_span_series();
+    void show_period_series(int period);
+
+    void hide_season_series();
+    void hide_span_series();
+    void hide_period_series(int period);
     // TODO:
     friend QPointF translate_to_actual_data(LineChart& lineChart, QPointF chart_point, std::size_t series_index);
     void set_title(const std::string& title);

@@ -137,5 +137,14 @@ void DivisionTab::update_chart_data(const TeamStats &home, const TeamStats &away
 void DivisionTab::set_chart_title_string_prefix(QString string)
 {
     for(auto& chart : chartPointers)
-        chart->set_title(QString("%1 %2").arg(chart->get_title()).arg(string));
+    chart->set_title(QString("%1 %2").arg(chart->get_title()).arg(string));
+}
+
+void DivisionTab::hide_series_impl(SeriesType SType) {
+    qDebug() << "void DivisionTab::hide_series_impl(SeriesType SType) not yet implemented";
+}
+
+void DivisionTab::show_series_impl(SeriesType SType)
+{
+    qDebug() << "void DivisionTab::show_series_impl(SeriesType SType) not yet implemented";
 }

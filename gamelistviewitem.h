@@ -1,5 +1,4 @@
-#ifndef GAMELISTVIEWITEM_H
-#define GAMELISTVIEWITEM_H
+#pragma once
 
 #include <QObject>
 #include <QListView>
@@ -11,5 +10,3 @@ public:
     ~GameListViewItem();
 
 };
-
-#endif // GAMELISTVIEWITEM_H

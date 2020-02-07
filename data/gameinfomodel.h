@@ -1,10 +1,14 @@
 #pragma once
+
+// System headers. These can be removed, as pre compiled headers are used in CMakeLists.txt
 #include <string>
 #include <ctime>
 #include <chrono>
-#include <QString>
 #include <optional>
-#include "valueholder.h"
+
+// Other headers
+#include <QString>
+#include <valueholder.h>
 
 class GameInfoModel
 {

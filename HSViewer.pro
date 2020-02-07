@@ -1,4 +1,4 @@
-#-------------------------------------------------
+    #-------------------------------------------------
 #
 # Project created by QtCreator 2019-11-26T23:07:33
 #
@@ -25,6 +25,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++17
 
 SOURCES += \
+    charts/areachart.cpp \
     charts/gameresultbox.cpp \
     charts/linechart.cpp \
     charts/linechartdatatooltip.cpp \
@@ -34,17 +35,19 @@ SOURCES += \
     data/gamestatistics.cpp \
     data/popuptablemodel.cpp \
     data/scoringmodel.cpp \
+    data/standing.cpp \
     data/statsheet.cpp \
     data/stattable.cpp \
     data/trend.cpp \
     gameboxeschart.cpp \
     gamedatapopup.cpp \
+    liveresultanalysiscontainer.cpp \
         main.cpp \
         mainwindow.cpp \
     mdbconnection.cpp \
     gametime.cpp \
     gamelistitemmodel.cpp \
-    resultanalysiswidget.cpp \
+    requestinputwidget.cpp \
     seasontablemodel.cpp \
     tabs/divisiontab.cpp \
     tabs/goalstab.cpp \
@@ -61,6 +64,7 @@ SOURCES += \
     utils.cpp
 
 HEADERS += \
+    charts/areachart.h \
     charts/gameresultbox.h \
     charts/linechart.h \
     charts/linechartdatatooltip.h \
@@ -70,15 +74,17 @@ HEADERS += \
     data/gamestatistics.h \
     data/popuptablemodel.h \
     data/scoringmodel.h \
+    data/standing.h \
     data/statsheet.h \
     data/stattable.h \
     data/trend.h \
     gameboxeschart.h \
     gamedatapopup.h \
+    liveresultanalysiscontainer.h \
         mainwindow.h \
     mdbconnection.h \
     gametime.h \
-    resultanalysiswidget.h \
+    requestinputwidget.h \
     seasontablemodel.h \
     tabs/divisiontab.h \
     tabs/goalstab.h \
@@ -100,8 +106,9 @@ HEADERS += \
 FORMS += \
         gameboxeschart.ui \
         gamedatapopup.ui \
+        liveresultanalysiscontainer.ui \
         mainwindow.ui \
-        resultanalysiswidget.ui
+        requestinputwidget.ui
 
 INCLUDEPATH += /usr/local/include/mongocxx/v_noabi /usr/local/include/bsoncxx/v_noabi
 
@@ -111,3 +118,6 @@ LIBS += -L/usr/local/lib -lmongocxx -lbsoncxx
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+DISTFILES += \
+    CMakeLists.txt

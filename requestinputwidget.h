@@ -1,6 +1,5 @@
-#ifndef REQUESTINPUTWIDGET_H
-#define REQUESTINPUTWIDGET_H
-
+#pragma once
+#include "mainwindow.h"
 #include <QWidget>
 
 namespace Ui {
@@ -14,9 +13,15 @@ class RequestInputWidget : public QWidget
 public:
     explicit RequestInputWidget(QWidget *parent = nullptr);
     ~RequestInputWidget();
+    void register_mainwindow_connection(MainWindow& window);
+
+private slots:
+    void on_btnRequestStats_clicked();
+
+signals:
+    void signal_standing_analysis(int homescore, int awayscore, int period, int minutes);
+
 
 private:
     Ui::RequestInputWidget *ui;
 };
-
-#endif // REQUESTINPUTWIDGET_H

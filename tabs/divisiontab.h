@@ -29,4 +29,9 @@ private:
     // TeamStatsTab interface
 public:
 
+
+    // TeamStatsTab interface
+private:
+    void hide_series_impl(SeriesType SType) override;
+    void show_series_impl(SeriesType SType) override;
 };

@@ -1,5 +1,7 @@
 #pragma once
 #include "gametime.h"
+
+// System headers. These can be removed, as pre compiled headers are used in CMakeLists.txt
 #include <tuple>
 #include <optional>
 #include <unordered_map>
@@ -47,13 +49,13 @@ private:
     Assist m_secondAssist;
 
 public:
-    ScoringModel();
+    ScoringModel() noexcept;
 
-    ScoringModel(int goal_number, GameTime gameTime, Strength strength, const std::string& scoring_team, const std::string& goal_scorer, Assist first, Assist second);
-    ScoringModel(const ScoringModel&);
-    ScoringModel(ScoringModel&&);
+    ScoringModel(int goal_number, GameTime gameTime, Strength strength, const std::string& scoring_team, const std::string& goal_scorer, Assist first, Assist second) noexcept;
+    ScoringModel(const ScoringModel&) noexcept;
+    ScoringModel(ScoringModel&&) noexcept;
 
-    ScoringModel& operator=(const ScoringModel& rhs);
+    ScoringModel& operator=(const ScoringModel& rhs) noexcept;
     ~ScoringModel() {}
 
     Strength strength() const;

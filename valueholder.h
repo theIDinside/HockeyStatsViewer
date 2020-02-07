@@ -2,14 +2,6 @@
 #include <memory>
 
 template <typename T>
-struct SuccessRatio {
-    T attempts;
-    T success;
-};
-
-// std::pair<int, int> to_pair(const SpecialTeams& data);
-
-template <typename T>
 struct TeamsValueHolder {
     TeamsValueHolder() : home{}, away{} {}
     TeamsValueHolder(const T& home, const T& away) : home(home), away(away) {}
@@ -18,11 +10,17 @@ struct TeamsValueHolder {
     ~TeamsValueHolder() {}
     TeamsValueHolder& operator=(const TeamsValueHolder& rhs) {
         if(this != &rhs) {
-
             this->home = rhs.home;
             this->away = rhs.away;
         }
         return *this;
+    }
+
+    TeamsValueHolder& operator=(TeamsValueHolder&& rhs) {
+        if(this != &rhs) {
+            this->home = std::move(rhs.home);
+            this->away = std::move(rhs.away);
+        }
     }
 
     T home;

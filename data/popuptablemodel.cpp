@@ -54,6 +54,7 @@ QVariant PopupTableModel::headerData(int section, Qt::Orientation orientation, i
                 case 3: return QString{"GA"};
                 case 4: return QString{"SF"};
                 case 5: return QString{"SA"};
+                case 6: return QString{"PP Attempts"};
             }
         }
     }
