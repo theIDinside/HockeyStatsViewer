@@ -2,7 +2,6 @@
 #include <memory>
 
 #include "gamelistitemmodel.h"
-#include "mdbconnection.h"
 #include "teamstats.h"
 #include "tabs/teamstatstab.h"
 #include <QActionGroup>
@@ -11,6 +10,7 @@
 #include <QMainWindow>
 #include <QStringListModel>
 #include "data/gamestatistics.h"
+#include "db/DB.h"
 
 namespace Ui {
 class MainWindow;
@@ -22,7 +22,7 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    bool hook_db_connection(std::unique_ptr<MDbConnection> conn);
+    bool hook_db_connection(std::unique_ptr<DB> conn);
     void show_popup();
 
 public slots:
@@ -45,7 +45,7 @@ private:
     void createMenu();
 
     Ui::MainWindow *ui;
-    std::unique_ptr<MDbConnection> m_connection;
+    std::unique_ptr<DB> m_connection;
     QComboBox* m_gamesTodayList;
     QLabel* m_gamesTodayLabel;
     std::vector<GameInfoModel> m_gamesToday;

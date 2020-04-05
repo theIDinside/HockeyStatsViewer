@@ -13,6 +13,7 @@
 #include "standing.h"
 // #include "trend.h"
 #include "valueholder.h"
+#include "CalendarDate.h"
 
 using TeamNames = TeamsValueHolder<std::string>;
 using IntResults = TeamsValueHolder<int>;
@@ -28,7 +29,6 @@ enum GamePeriod : std::size_t {
     Third = 2,
     OT = 3
 };
-
 
 std::string to_string(GamePeriod p);
 GoalType from_goal(const ScoringModel& g);
@@ -54,11 +54,10 @@ public:
     int m_game_id;
     TeamNames m_teams;
     std::string m_team_won;
-    std::chrono::system_clock::time_point m_date_played;
-    std::time_t m_date_played_time_t;
+    CalendarDate m_date_played;
     std::vector<IntResults> m_shots_on_goal;
     IntResults m_final_result;
-    IntResults m_face_off_wins;
+    FloatResults m_face_off_wins;
     PowerPlay m_power_play;
     IntResults m_penalty_infraction_minutes;
     IntResults m_hits;
@@ -72,17 +71,15 @@ public:
     };
 
     GameModel();
-    GameModel(int id, const TeamNames& teams, const std::string& team_won,
-              std::chrono::system_clock::time_point date_played, const std::vector<IntResults>& shots,
-              IntResults final_result, IntResults FO, PowerPlay PP,
+    GameModel(int id, TeamNames teams, std::string team_won,
+              CalendarDate date_played, const std::vector<IntResults>& shots,
+              IntResults final_result, FloatResults FO, PowerPlay PP,
               IntResults PIM, IntResults hits, IntResults blocked_shots, IntResults give_aways, std::vector<ScoringModel>&& scoringSummary) noexcept;
 
     GameModel(const GameModel& copy);
-    GameModel(GameModel&& copy);
+    GameModel(GameModel&& copy) noexcept;
     GameModel& operator=(const GameModel& rhs);
-    ~GameModel() {}
-    bool is_set() const;
-    bool set(int id, TeamNames teams, const std::string& team_won, std::vector<IntResults> shots, IntResults final_result, IntResults FO, PowerPlay PP, IntResults PIM, IntResults hits, IntResults blocked_shots, IntResults give_aways);
+    ~GameModel() = default;
 
     TeamType get_team_type(const std::string& team) const;
     TeamType get_opponent_team_type(const std::string& team) const;
@@ -96,26 +93,23 @@ public:
 
     bool operator==(const GameModel& rhs);
 
-    double pp_efficiency(TeamType t) const;
-    double pk_efficiency(TeamType t) const;
-    int pp_attempts(TeamType t) const;
-    int pp_goals(TeamType t) const;
-    int pk_attempts(TeamType t) const;
-    int pk_letups(TeamType t) const;
-    double shot_efficiency(TeamType t) const;
-    double save_pct(TeamType t) const;
-    int goals_by(TeamType t, GoalType gt = GoalType::Any) const;
-    int shots_by(TeamType t) const;
-
-    int shots_period_by(GamePeriod period, TeamType t) const;
-    int goals_period_by(GamePeriod period, TeamType t) const;
-
-    double calculate_pdo(TeamType t) const;
-
-    constexpr const std::string& winning_team() const { return m_team_won; }
-    constexpr const std::string& home_team() const { return m_teams.home; }
-    constexpr const std::string& away_team() const { return m_teams.away; }
-    constexpr auto game_id() const { return m_game_id; }
+    [[nodiscard]] double pp_efficiency(TeamType t) const;
+    [[nodiscard]] double pk_efficiency(TeamType t) const;
+    [[nodiscard]] int pp_attempts(TeamType t) const;
+    [[nodiscard]] int pp_goals(TeamType t) const;
+    [[nodiscard]] int pk_attempts(TeamType t) const;
+    [[nodiscard]] int pk_letups(TeamType t) const;
+    [[nodiscard]] double shot_efficiency(TeamType t) const;
+    [[nodiscard]] double save_pct(TeamType t) const;
+    [[nodiscard]] int goals_by(TeamType t, GoalType gt = GoalType::Any) const;
+    [[nodiscard]] int shots_by(TeamType t) const;
+    [[nodiscard]] int shots_period_by(GamePeriod period, TeamType t) const;
+    [[nodiscard]] int goals_period_by(GamePeriod period, TeamType t) const;
+    [[nodiscard]] double calculate_pdo(TeamType t) const;
+    [[nodiscard]] constexpr const std::string& winning_team() const { return m_team_won; }
+    [[nodiscard]] constexpr const std::string& home_team() const { return m_teams.home; }
+    [[nodiscard]] constexpr const std::string& away_team() const { return m_teams.away; }
+    [[nodiscard]] constexpr auto game_id() const { return m_game_id; }
 
     std::pair<int, int> score_after_time(GameTime time) const;
     std::vector<ScoringModel> goals() const;

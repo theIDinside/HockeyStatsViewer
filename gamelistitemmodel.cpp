@@ -4,6 +4,8 @@
 #include <chrono>
 #include <ctime>
 
+
+
 QVariant GameListItemModel::data(const QModelIndex &index, int role) const
 {
     auto row = static_cast<std::size_t>(index.row());
@@ -30,3 +32,4 @@ int GameListItemModel::rowCount(const QModelIndex &parent) const
 {
     return static_cast<int>(m_gamesToday.size());
 }
+

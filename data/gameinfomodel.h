@@ -9,6 +9,7 @@
 // Other headers
 #include <QString>
 #include <valueholder.h>
+#include "CalendarDate.h"
 
 class GameInfoModel
 {
@@ -17,19 +18,17 @@ public:
 private:
     TeamsValueHolder<std::string> m_teams;
 public:
-    std::optional<std::chrono::system_clock::time_point> m_date_played;
+    CalendarDate m_date_played;
     GameInfoModel();
     GameInfoModel(int gameID, TeamsValueHolder<std::string> teams, std::chrono::system_clock::time_point date_time);
     GameInfoModel(int gameID, TeamsValueHolder<std::string> teams);
     GameInfoModel(const GameInfoModel& copy);
-    GameInfoModel(GameInfoModel&& rhs);
+    GameInfoModel(GameInfoModel&& rhs) noexcept;
     GameInfoModel& operator=(const GameInfoModel& rhs);
-    ~GameInfoModel() {}
+    ~GameInfoModel() = default;
 
-    QString gameString() const;
-
-    std::string home_team() const;
-    std::string away_team() const;
-
-    std::string get_opponent_of(const std::string& team) const;
+    [[nodiscard]] QString gameString() const;
+    [[nodiscard]] std::string home_team() const;
+    [[nodiscard]] std::string away_team() const;
+    [[nodiscard]] std::string get_opponent_of(const std::string& team) const;
 };

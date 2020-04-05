@@ -54,7 +54,7 @@ void LastFiveGamesTab::update_chart_data(const TeamStats &home, const TeamStats 
     for(; it != e; it++) {
         auto tc = away.compare_game_to_trend_stats(*it);
         auto opponent = it->get_opponent_team_name(away.team_name());
-        auto gamesOfOpp = mptr_db->getGames(opponent);
+        auto gamesOfOpp = mptr_db->get_games(opponent);
         TeamStats oppTS{opponent, std::move(gamesOfOpp)};
         auto oppTC = oppTS.compare_game_to_trend_stats(*it);
         atComparisons.emplace_back(tc, oppTC);

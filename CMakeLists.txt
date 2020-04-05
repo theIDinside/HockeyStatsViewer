@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(HSViewer)
+project(hsviewer)
 set(EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -g -O3")
@@ -10,30 +10,28 @@ set(CMAKE_AUTOUIC ON)
 
 set(CMAKE_CXX_STANDARD 17)
 # set(CMAKE_CXX_COMPILER /usr/bin/clang++-8)
-message("What is in this variable: ${CMALE_MODULE_PATH}")
+message("Hello world")
+message("What is in this variable: ${CMAKE_MODULE_PATH}")
 set(CMAKE_CXX_FLAGS )
+set(Qt5_DIR /home/cx/apps/Qt/5.14.1/gcc_64/lib/cmake/Qt5/)
 find_package(Qt5 COMPONENTS Widgets Core Gui Charts REQUIRED)
-set(Qt5_DIR /home/cx/apps/Qt/5.12.6/gcc_64/lib/cmake/Qt5/)
 
 
 set(SOURCES_WITH_FORMS mainwindow.ui mainwindow.cpp gameboxeschart.ui gameboxeschart.cpp requestinputwidget.ui requestinputwidget.cpp gamedatapopup.ui gamedatapopup.cpp)
 set(CHART_SOURCES charts/areachart.cpp charts/gameresultbox.cpp charts/linechart.cpp charts/linechartdatatooltip.cpp charts/piechart.cpp)
-set(DATA_SOURCES data/gameinfomodel.cpp data/gamemodel.cpp data/popuptablemodel.cpp data/scoringmodel.cpp data/standing.cpp data/statsheet.cpp data/stattable.cpp data/trend.cpp data/gamestatistics.cpp)
+set(DATA_SOURCES data/gameinfomodel.cpp data/gamemodel.cpp data/popuptablemodel.cpp data/scoringmodel.cpp data/standing.cpp data/statsheet.cpp data/stattable.cpp data/trend.cpp data/gamestatistics.cpp db/DB.cpp db/DB.h data/CalendarDate.h db/types/GameResults.h valueholder.h db/types/Team.cpp db/types/Team.h)
 set(TAB_SOURCES tabs/divisiontab.cpp tabs/goalstab.cpp tabs/lastfivegamestab.cpp tabs/liveresulttab.cpp tabs/periodtab.cpp tabs/resultstatstab.cpp tabs/seasontab.cpp tabs/situationaltab.cpp tabs/specialteamtab.cpp tabs/teamstatstab.cpp)
 add_subdirectory(./dep/instrumentation)
+add_subdirectory(./dep/json)
 
-include_directories(/usr/local/include/mongocxx/v_noabi /usr/local/include/bsoncxx/v_noabi)
-
-add_executable(HSViewer
+add_executable(hsviewer
     ${SOURCES_WITH_FORMS}
     main.cpp
     gamelistitemmodel.cpp
     gametime.cpp
     liveresultanalysiscontainer.cpp
-    mdbconnection.cpp
     seasontablemodel.cpp
-    team.cpp
-    teamstats.cpp
+        teamstats.cpp
     utils.cpp
     ${CHART_SOURCES}
     ${DATA_SOURCES}
@@ -42,8 +40,14 @@ add_executable(HSViewer
     iterators.h
     valueholder.h)
 
-target_include_directories(HSViewer PRIVATE ~/dev/projects/HockeyStatsViewer/)
-target_link_libraries(HSViewer -L/usr/local/lib -lmongocxx -lbsoncxx -lpthread)
-target_link_libraries(HSViewer Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Charts)
-target_link_libraries(HSViewer instrumentation)
-target_precompile_headers(HSViewer PUBLIC <string> <memory> <vector> <iostream> <chrono> <ctime> <set> <unordered_map> <array> <algorithm> <numeric> <optional> <tuple> <cmath>)
+include_directories(".")
+
+target_include_directories(hsviewer PRIVATE ~/dev/projects/HockeyStatsViewer/)
+# target_link_libraries(hsviewer lpthread)
+target_link_libraries(hsviewer nlohmann_json::nlohmann_json)
+target_link_libraries(hsviewer Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Charts)
+target_link_libraries(hsviewer instrumentation)
+target_precompile_headers(hsviewer PUBLIC <string> <memory> <vector> <iostream> 
+    <chrono> <ctime> <set> <unordered_map> <array> 
+    <algorithm> <numeric> <optional> <cmath> 
+    <QGraphicsView> <QObject> <QWidget> <QChart> <QChartView> <QLineSeries> <QAreaSeries> <QString>)

@@ -84,7 +84,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-bool MainWindow::hook_db_connection(std::unique_ptr<MDbConnection> conn)
+bool MainWindow::hook_db_connection(std::unique_ptr<DB> conn)
 {
     if(!m_connection) {
         m_connection = std::move(conn);
@@ -95,10 +95,14 @@ bool MainWindow::hook_db_connection(std::unique_ptr<MDbConnection> conn)
 
 void MainWindow::on_mLoadGamesToday_released()
 {
-    auto games = m_connection->getTodaysGames();
-    std::copy(games.begin(), games.end(), std::back_inserter(m_gamesToday));
-    m_gamesTodayModel = new GameListItemModel(std::move(games), this);
-    ui->mGamesTodayListView->setModel(m_gamesTodayModel);
+    auto games_opt = m_connection->get_games_today();
+    if(games_opt) {
+        auto games = games_opt.value();
+        std::copy(games.begin(), games.end(), std::back_inserter(m_gamesToday));
+        m_gamesTodayModel = new GameListItemModel(std::move(games), this);
+        ui->mGamesTodayListView->setModel(m_gamesTodayModel);
+    }
+
 }
 
 void MainWindow::on_mGamesTodayListView_clicked(const QModelIndex &index)
@@ -110,8 +114,8 @@ void MainWindow::on_mGamesTodayListView_clicked(const QModelIndex &index)
             return gameInfo.m_game_id == gameId;
         });
         if(it != m_gamesToday.end()) {
-            auto away_games = m_connection->getGames(it->away_team());
-            auto home_games = m_connection->getGames(it->home_team());
+            auto away_games = m_connection->get_games(it->away_team());
+            auto home_games = m_connection->get_games(it->home_team());
             TeamStats ts_away{it->away_team(), std::move(away_games)};
             TeamStats ts_home{it->home_team(), std::move(home_games)};
             m_home = ts_home;
@@ -173,10 +177,13 @@ void MainWindow::on_mDatePicker_clicked(const QDate &date)
     // Get games for date
     qDebug() << date;
     m_gamesToday.clear();
-    auto games = m_connection->getGamesAtDate(day_range_from_QDate(date));
-    std::copy(games.begin(), games.end(), std::back_inserter(m_gamesToday));
-    m_gamesTodayModel = new GameListItemModel(std::move(games), this);
-    ui->mGamesTodayListView->setModel(m_gamesTodayModel); // widget takes ownership over m_gamesTodayModel pointer... do not delete it manually.
+    auto games_opt = m_connection->get_games_at_date(CalendarDate::from(date));
+    if(games_opt) {
+        auto games = games_opt.value();
+        std::copy(games.begin(), games.end(), std::back_inserter(m_gamesToday));
+        m_gamesTodayModel = new GameListItemModel(std::move(games), this);
+        ui->mGamesTodayListView->setModel(m_gamesTodayModel); // widget takes ownership over m_gamesTodayModel pointer... do not delete it manually.
+    }
 }
 
 void MainWindow::on_mUpdateCharts_clicked()
@@ -200,8 +207,8 @@ void MainWindow::game_data_popup(int gameID)
     auto homeTeam = gInfo->home_team();
     auto awayTeam = gInfo->away_team();
 
-    auto hGames = m_connection->getGames(homeTeam);
-    auto aGames = m_connection->getGames(awayTeam);
+    auto hGames = m_connection->get_games(homeTeam);
+    auto aGames = m_connection->get_games(awayTeam);
     auto playedGame = m_connection->get_game(gameID);
 
     TeamStats away{awayTeam, std::move(aGames)};

@@ -14,7 +14,6 @@
 // #include <mutex>
 
 // Other headers
-#include <bsoncxx/types.hpp>
 #include <iomanip>
 using chrono_tp = std::chrono::system_clock::time_point;
 

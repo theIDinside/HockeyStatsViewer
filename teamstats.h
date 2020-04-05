@@ -6,7 +6,6 @@
 #include "data/gameinfomodel.h"
 #include "data/gamemodel.h"
 #include "data/gamestatistics.h"
-#include "mdbconnection.h"
 #include <QBarSet>
 #include <data/standing.h>
 #include <data/trend.h>
@@ -101,7 +100,7 @@ public:
     std::vector<double> shots_against_avg(Span span) const;                                  // DONE
 
     // Returns season averages before each of last_amount_games games
-    std::vector<double> gf_avg_last_x_games(std::size_t last_amount_games) const;
+    [[nodiscard]] std::vector<double> gf_avg_last_x_games(std::size_t last_amount_games) const;
     std::vector<double> ga_avg_last_x_games(std::size_t last_amount_games) const;
     std::vector<double> sf_avg_last_x_games(std::size_t last_amount_games) const;
     std::vector<double> sa_avg_last_x_games(std::size_t last_amount_games) const;
@@ -150,38 +149,35 @@ public:
 
 
 
-    std::vector<double> pdo_game_average(Span span) const;                                   // DONE
-    std::vector<double> pdo(Span span) const;                                                // DONE
-    std::vector<double> corsi(Span span) const;                                              // TODO: implement
-    std::vector<double> corsi_average(Span span) const;                                      // TODO: implement
-    ResultRatio wins_against_division(const std::string& division) const;                               // DONE
-    ResultRatio losses_against_division(const std::string& div) const;                                  // DONE
-    std::vector<ResultRatio> special_teams(Span span, GameModel::SpecialTeamType type) const;           // DONE
-    std::vector<double> special_team_efficiency(Span span, GameModel::SpecialTeamType sp_type) const;   // DONE
-    std::vector<double> times_in_pp_game_average(Span span) const;                                      // DONE
-    std::vector<double> times_in_pk_game_average(Span span) const;                                      // TODO: implement
-    CRange games_range_from_back(std::size_t amt) const;
-    ResultRatio result_at_home() const;
-    ResultRatio result_on_road() const;
-    ResultRatio empty_net_letups() const;
-    ResultRatio empty_net_scoring() const;                            // DONE
-    ResultRatio games_with_pp_goals() const;
-    ResultRatio games_with_pk_letups() const;
+    [[nodiscard]] std::vector<double> pdo_game_average(Span span) const;                                   // DONE
+    [[nodiscard]] std::vector<double> pdo(Span span) const;                                                // DONE
+    [[nodiscard]] std::vector<double> corsi(Span span) const;                                              // TODO: implement
+    [[nodiscard]] std::vector<double> corsi_average(Span span) const;                                      // TODO: implement
+    [[nodiscard]] ResultRatio wins_against_division(const std::string& division) const;                               // DONE
+    [[nodiscard]] ResultRatio losses_against_division(const std::string& div) const;                                  // DONE
+    [[nodiscard]] std::vector<ResultRatio> special_teams(Span span, GameModel::SpecialTeamType type) const;           // DONE
+    [[nodiscard]] std::vector<double> special_team_efficiency(Span span, GameModel::SpecialTeamType sp_type) const;   // DONE
+    [[nodiscard]] std::vector<double> times_in_pp_game_average(Span span) const;                                      // DONE
+    [[nodiscard]] std::vector<double> times_in_pk_game_average(Span span) const;                                      // TODO: implement
+    [[nodiscard]] CRange games_range_from_back(std::size_t amt) const;
+    [[nodiscard]] ResultRatio result_at_home() const;
+    [[nodiscard]] ResultRatio result_on_road() const;
+    [[nodiscard]] ResultRatio empty_net_letups() const;
+    [[nodiscard]] ResultRatio empty_net_scoring() const;                            // DONE
+    [[nodiscard]] ResultRatio games_with_pp_goals() const;
+    [[nodiscard]] ResultRatio games_with_pk_letups() const;
     std::pair<int, int> wins_after_standing(int team, int opponent);
     std::pair<int, int> wins_after_standing_at_time(const GameInfoModel& gInfo, std::pair<int, int> standing, GameTime game_time);
     std::pair<int, int> loss_after_standing(int team, int opponent);
-    std::string team_name() const;
+    [[nodiscard]] std::string team_name() const;
     double goals_made_after_time_avg(const GameTime& time);
-    std::size_t games_played() const;
-    const std::vector<GameModel>& get_games() const;
+    [[nodiscard]] std::size_t games_played() const;
+    [[nodiscard]] const std::vector<GameModel>& get_games() const;
 
     friend std::vector<GameInfoModel> last_opponents_game_info(const TeamStats& ts, int count);
 
-    TrendComparison compare_game_to_trend_stats(const GameModel& game) const;
-
-    friend std::vector<GameModel> get_games_of(std::shared_ptr<MDbConnection> connection, const std::string& team);
-
-    std::vector<ScoringModel> get_all_goals_for() const;
+    [[nodiscard]] TrendComparison compare_game_to_trend_stats(const GameModel& game) const;
+    [[nodiscard]] std::vector<ScoringModel> get_all_goals_for() const;
 
     // TODO: This obviously is not returning a vector of ints, but rather a vector of a at this point undefined struct (analysis data)
     std::vector<const GameModel*> games_before(int gameID) const;

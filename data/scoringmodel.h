@@ -8,7 +8,7 @@
 std::pair<std::optional<std::string>, std::optional<std::string>> convertAssistStrings(const std::string& first, const std::string& second);
 
 enum GoalType {
-    Game,
+    RegularGame,
     SO,
     Any
 };

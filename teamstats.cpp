@@ -640,10 +640,6 @@ std::vector<ScoringModel> TeamStats::get_all_goals_for() const
     return GoalsFor;
 }
 
-std::vector<GameModel> get_games_of(std::shared_ptr<MDbConnection> connection, const std::string &team)
-{
-    return connection->getGames(team);
-}
 
 std::vector<const GameModel *> TeamStats::games_before(int gameID) const
 {

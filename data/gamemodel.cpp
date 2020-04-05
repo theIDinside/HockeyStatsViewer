@@ -5,6 +5,7 @@
 #include <iostream>
 #include <numeric>
 #include <algorithm>
+#include <utility>
 
 static auto gameModelConstructedDebug = 0;
 std::string team_scoring(const ScoringModel& score_model) {
@@ -84,7 +85,7 @@ std::string GameModel::getConference(const std::string &team)
 GameModel::GameModel() :
     m_game_id(0), m_teams{"", ""},
     m_team_won{""}, m_date_played{},
-    m_date_played_time_t{}, m_shots_on_goal{{0,0},{0,0}, {0,0}},
+    m_shots_on_goal{{0,0},{0,0}, {0,0}},
     m_final_result{0, 0}, m_face_off_wins{0, 0},
     m_penalty_infraction_minutes{0,0}, m_hits{0,0},
     m_blocked_shots{}, m_give_aways{}, m_goals{}
@@ -93,14 +94,14 @@ GameModel::GameModel() :
 }
 
 // CONSTRUCTORS 
-GameModel::GameModel(int id, const TeamNames& teams, const std::string& team_won, std::chrono::system_clock::time_point date_played, const std::vector<IntResults>& shots,
-                     IntResults final_result, IntResults FO, PowerPlay PP, IntResults PIM,
+GameModel::GameModel(int id, TeamNames  teams, std::string  team_won, CalendarDate date_played, const std::vector<IntResults>& shots,
+                     IntResults final_result, FloatResults FO, PowerPlay PP, IntResults PIM,
                      IntResults hits, IntResults blocked_shots, IntResults give_aways, std::vector<ScoringModel>&& scoringSummary) noexcept :
-    m_game_id(id), m_teams{teams},
-    m_team_won{team_won}, m_date_played{date_played}, m_shots_on_goal{}, m_final_result{final_result},
-    m_face_off_wins{FO}, m_power_play{PP},
-    m_penalty_infraction_minutes{PIM}, m_hits{hits},
-    m_blocked_shots{blocked_shots}, m_give_aways{give_aways}, m_goals{std::move(scoringSummary)}
+    m_game_id(id), m_teams{std::move(teams)},
+    m_team_won{std::move(team_won)}, m_date_played{date_played}, m_shots_on_goal{}, m_final_result{std::move(final_result)},
+    m_face_off_wins{std::move(std::move(FO))}, m_power_play{std::move(PP)},
+    m_penalty_infraction_minutes{std::move(PIM)}, m_hits{std::move(hits)},
+    m_blocked_shots{std::move(blocked_shots)}, m_give_aways{std::move(give_aways)}, m_goals{std::move(scoringSummary)}
 {
     gameModelConstructedDebug++;
     // std::cout << "In GameModel constructor... Constructed object " << gameModelConstructedDebug << " times" << "\n";
@@ -151,35 +152,6 @@ GameModel &GameModel::operator=(const GameModel &rhs) {
         std::copy(rhs.m_goals.cbegin(), rhs.m_goals.cend(), std::back_inserter(m_goals));
     }
     return *this;
-}
-
-bool GameModel::is_set() const
-{
-    return m_init;
-}
-
-bool GameModel::set(int id, TeamNames teams, const std::string &team_won,
-                    std::vector<IntResults> shots, IntResults final_result,
-                    IntResults FO, PowerPlay PP, IntResults PIM,
-                    IntResults hits, IntResults blocked_shots, IntResults give_aways)
-{
-    m_game_id = id;
-    m_teams = teams;
-    std::copy(team_won.begin(), team_won.end(), std::back_inserter(m_team_won));
-    std::copy(shots.begin(), shots.end(), std::back_inserter(m_shots_on_goal));
-    m_final_result = final_result;
-    m_face_off_wins = FO;
-    m_power_play = PP;
-    m_penalty_infraction_minutes = PIM;
-    m_hits = hits;
-    m_blocked_shots = blocked_shots;
-    m_give_aways = give_aways;
-    if(m_shots_on_goal.size() < 3) {
-        m_init = false;
-        throw std::runtime_error{"Initing GameModel with data failed. Shots on goal, must be a vector of minimum size 3 (Full game >= 3 periods)"};
-    }
-    m_init = true;
-    return m_init;
 }
 
 GameModel::TeamType GameModel::get_team_type(const std::string &team) const

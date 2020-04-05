@@ -1,7 +1,6 @@
 #pragma once
-#include "data/gameinfomodel.h"
-
 #include <QAbstractItemModel>
+#include <data/gameinfomodel.h>
 
 class GameListItemModel : public QAbstractListModel
 {

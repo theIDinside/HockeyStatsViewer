@@ -7,3 +7,9 @@ build
 vscode
 .vscode
 *CMakeF*
+.idea/
+HSViewer.pro.user HSViewer.pro.user.43ef125 HSViewer.pro.user.4.9-pre1 HSViewer.pro.user.bafc473
+target
+assets/
+cmake-build-debug/
+HSViewer.pro.user.bafc473
