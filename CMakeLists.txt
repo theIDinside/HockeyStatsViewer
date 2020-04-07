@@ -19,7 +19,7 @@ find_package(Qt5 COMPONENTS Widgets Core Gui Charts REQUIRED)
 
 set(SOURCES_WITH_FORMS mainwindow.ui mainwindow.cpp gameboxeschart.ui gameboxeschart.cpp requestinputwidget.ui requestinputwidget.cpp gamedatapopup.ui gamedatapopup.cpp)
 set(CHART_SOURCES charts/areachart.cpp charts/gameresultbox.cpp charts/linechart.cpp charts/linechartdatatooltip.cpp charts/piechart.cpp)
-set(DATA_SOURCES data/gameinfomodel.cpp data/gamemodel.cpp data/popuptablemodel.cpp data/scoringmodel.cpp data/standing.cpp data/statsheet.cpp data/stattable.cpp data/trend.cpp data/gamestatistics.cpp db/DB.cpp db/DB.h data/CalendarDate.h db/types/GameResults.h valueholder.h db/types/Team.cpp db/types/Team.h)
+set(DATA_SOURCES data/gameinfomodel.cpp data/gamemodel.cpp data/popuptablemodel.cpp data/scoringmodel.cpp data/standing.cpp data/statsheet.cpp data/stattable.cpp data/trend.cpp data/gamestatistics.cpp db/DB.cpp db/DB.h data/CalendarDate.cpp db/types/GameResults.cpp valueholder.h db/types/Team.cpp db/types/Team.h)
 set(TAB_SOURCES tabs/divisiontab.cpp tabs/goalstab.cpp tabs/lastfivegamestab.cpp tabs/liveresulttab.cpp tabs/periodtab.cpp tabs/resultstatstab.cpp tabs/seasontab.cpp tabs/situationaltab.cpp tabs/specialteamtab.cpp tabs/teamstatstab.cpp)
 add_subdirectory(./dep/instrumentation)
 add_subdirectory(./dep/json)

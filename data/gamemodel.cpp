@@ -118,9 +118,9 @@ GameModel::GameModel(const GameModel &copy) : m_game_id(copy.m_game_id), m_teams
     std::copy(copy.m_goals.cbegin(), copy.m_goals.cend(), std::back_inserter(m_goals));
 }
 
-GameModel::GameModel(GameModel &&copy) :
+GameModel::GameModel(GameModel &&copy) noexcept :
     m_game_id(copy.m_game_id), m_teams{std::move(copy.m_teams)}, m_team_won{std::move(copy.m_team_won)},
-    m_date_played{copy.m_date_played}, m_date_played_time_t{copy.m_date_played_time_t},
+    m_date_played{copy.m_date_played},
     m_shots_on_goal{std::move(copy.m_shots_on_goal)},
     m_final_result{std::move(copy.m_final_result)}, m_face_off_wins{std::move(copy.m_face_off_wins)},
     m_power_play{std::move(copy.m_power_play)}, m_penalty_infraction_minutes{std::move(copy.m_penalty_infraction_minutes)},
@@ -137,7 +137,6 @@ GameModel &GameModel::operator=(const GameModel &rhs) {
         m_teams = rhs.m_teams;
         m_team_won = rhs.m_team_won;
         m_date_played = rhs.m_date_played;
-        m_date_played_time_t = {};
         m_shots_on_goal.clear(); // Wow what a difficult bug to find this created, when I forgot to clear the vector.
         std::copy(rhs.m_shots_on_goal.begin(), rhs.m_shots_on_goal.end(), std::back_inserter(m_shots_on_goal));
         m_final_result = rhs.m_final_result;
@@ -604,6 +603,6 @@ GoalType from_goal(const ScoringModel &g)
         case Strength::SHOOTOUT:
             return GoalType::SO;
         default:
-            return GoalType::Game;
+            return GoalType::RegularGame;
     }
 }

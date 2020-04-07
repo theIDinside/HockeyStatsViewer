@@ -13,7 +13,7 @@
 #include "standing.h"
 // #include "trend.h"
 #include "valueholder.h"
-#include "CalendarDate.h"
+#include <data/CalendarDate.h>
 
 using TeamNames = TeamsValueHolder<std::string>;
 using IntResults = TeamsValueHolder<int>;

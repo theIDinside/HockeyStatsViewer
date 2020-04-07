@@ -11,21 +11,15 @@ struct CalendarDate {
     ~CalendarDate() = default;
     int day, month, year;
 
-    static CalendarDate from(const QDate& date);
+    static CalendarDate from(const QDate& date) {
+        CalendarDate cal_date{};
+        cal_date.day = date.day();
+        cal_date.month = date.month();
+        cal_date.year = date.year();
+        return cal_date;
+    }
+
+    friend bool operator<(const CalendarDate& lhs, const CalendarDate& rhs);
+    friend bool operator>(const CalendarDate& lhs, const CalendarDate& rhs);
+    friend bool operator==(const CalendarDate& lhs, const CalendarDate& rhs);
 };
-
-bool operator<(const CalendarDate& lhs, const CalendarDate& rhs) {
-    return (lhs.year < rhs.year || lhs.month < rhs.month || lhs.day < rhs.day);
-}
-
-bool operator==(const CalendarDate& lhs, const CalendarDate& rhs) {
-    return (lhs.year == rhs.year && lhs.month == rhs.month && lhs.day == rhs.day);
-}
-
-CalendarDate CalendarDate::from(const QDate &date) {
-    CalendarDate cal_date{};
-    cal_date.day = date.day();
-    cal_date.month = date.month();
-    cal_date.year = date.year();
-    return cal_date;
-}

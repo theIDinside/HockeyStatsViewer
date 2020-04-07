@@ -39,26 +39,26 @@ void GoalsTab::update_chart_data(const TeamStats &home, const TeamStats &away)
     auto HSGF = home.goals_for_avg(Span::Season);
     auto homeSeasonGF = home.season_avg_last_x_games(5, [&](auto teamName, auto begin, auto end, auto divisor) {
         double goals_made = std::accumulate(begin, end, 0.0, [&](auto& acc, const GameModel& game) {
-            return acc + (double)game.goals_by(game.get_team_type(teamName), GoalType::Game);
+            return acc + (double)game.goals_by(game.get_team_type(teamName), GoalType::RegularGame);
         });
         return goals_made / (double) divisor;
     });
     auto awaySeasonGF = away.season_avg_last_x_games(5, [&](auto teamName, auto begin, auto end, auto divisor) {
         double goals_made = std::accumulate(begin, end, 0.0, [&](auto& acc, const GameModel& game) {
-            return acc + (double)game.goals_by(game.get_team_type(teamName), GoalType::Game);
+            return acc + (double)game.goals_by(game.get_team_type(teamName), GoalType::RegularGame);
         });
         return goals_made / (double) divisor;
     });
 
     auto homeSeasonGA = home.season_avg_last_x_games(5, [&](auto teamName, auto begin, auto end, auto divisor) {
         double goals_against = std::accumulate(begin, end, 0.0, [&](auto& acc, const GameModel& game) {
-           return acc + (double)game.goals_by(game.get_opponent_team_type(teamName), GoalType::Game);
+           return acc + (double)game.goals_by(game.get_opponent_team_type(teamName), GoalType::RegularGame);
         });
         return goals_against / (double)divisor;
     });
     auto awaySeasonGA = away.season_avg_last_x_games(5, [&](auto teamName, auto begin, auto end, auto divisor) {
         double goals_against = std::accumulate(begin, end, 0.0, [&](auto& acc, const GameModel& game) {
-           return acc + (double)game.goals_by(game.get_opponent_team_type(teamName), GoalType::Game);
+           return acc + (double)game.goals_by(game.get_opponent_team_type(teamName), GoalType::RegularGame);
         });
         return goals_against / (double)divisor;
     });

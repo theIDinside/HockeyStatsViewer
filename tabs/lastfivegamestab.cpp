@@ -12,10 +12,6 @@ LastFiveGamesTab::LastFiveGamesTab(QWidget* parent) : TeamStatsTab(parent)
     setLayout(&m_layout);
 }
 
-void LastFiveGamesTab::hook_db(std::shared_ptr<MDbConnection> conn)
-{
-    mptr_db = conn;
-}
 
 void LastFiveGamesTab::update_chart_data(const TeamStats &home, const TeamStats &away)
 {

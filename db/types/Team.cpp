@@ -23,3 +23,24 @@ void from_json(const json& j, Team& team) {
     j.at("name").get_to(team.m_team_name);
     j.at("abbreviations").get_to(team.m_abbreviations);
 }
+
+bool operator==(const Team& lhs, const Team& rhs) {
+    return lhs.id() == rhs.id();
+}
+
+bool operator==(const Team& lhs, const std::string& team_string) {
+    if(team_string == lhs.team_name()) {
+        return true;
+    }
+    for(const auto& abbr: lhs.m_abbreviations) {
+        if(abbr == team_string) return true;
+    }
+    return false;
+}
+
+bool operator<(const Team& lhs, const Team& rhs) {
+    return lhs.id() < rhs.id();
+}
+bool operator>(const Team& lhs, const Team& rhs) {
+    return lhs.id() > rhs.id();
+}

@@ -20,7 +20,7 @@ private:
 public:
     CalendarDate m_date_played;
     GameInfoModel();
-    GameInfoModel(int gameID, TeamsValueHolder<std::string> teams, std::chrono::system_clock::time_point date_time);
+    GameInfoModel(int gameID, TeamsValueHolder<std::string> teams, CalendarDate date);
     GameInfoModel(int gameID, TeamsValueHolder<std::string> teams);
     GameInfoModel(const GameInfoModel& copy);
     GameInfoModel(GameInfoModel&& rhs) noexcept;

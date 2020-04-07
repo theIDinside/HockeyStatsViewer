@@ -8,9 +8,10 @@
 #include <vector>
 #include <gametime.h>
 #include <valueholder.h>
-#include "data/CalendarDate.h"
+#include <data/CalendarDate.h>
 #include <nlohmann/json.hpp>
 #include <data/gamemodel.h>
+#include <data/gameinfomodel.h>
 #include <db/types/Team.h>
 
 using Teams = TeamsValueHolder<std::string>;
@@ -35,7 +36,7 @@ enum TeamStrength {
     TS_SHOOTOUT
 };
 
-Strength convert_strength(const TeamStrength& str) {
+inline Strength convert_strength(const TeamStrength& str) {
     switch(str) {
         case TS_EVEN:
             return Strength::EVEN;
@@ -66,8 +67,10 @@ struct GameInfo {
     GameInfo() = default;
     ~GameInfo() = default;
     int m_game_id;
-    int m_home, m_away;
+    std::string m_home, m_away;
     CalendarDate m_date;
+
+    static GameInfoModel convert(const GameInfo& gi);
 };
 
 struct Goal {
@@ -80,14 +83,9 @@ struct Goal {
     Assist m_first_assist{};
     Assist m_second_assist{};
 
-    friend ScoringModel convert(const Goal& goal);
+    static ScoringModel convert(const Goal& goal);
     friend void from_json(const json& j, Goal& g);
 };
-
-ScoringModel convert(const Goal& goal) {
-    ScoringModel s{goal.m_goal_number, goal.m_time, convert_strength(goal.m_strength), goal.m_scoring_team, goal.m_goal_scorer, goal.m_first_assist, goal.m_second_assist};
-    return s;
-}
 
 struct Game {
     Game() = default;
@@ -105,58 +103,6 @@ struct Game {
     IntResults m_take_aways{};
     std::vector<Goal> m_goals{};
 
-    friend GameModel convert(const Game& game);
+    static GameModel convert(const Game& game);
 
 };
-
-std::vector<ScoringModel> convert(const std::vector<Goal>& goals) {
-    std::vector<ScoringModel> scoring_summary;
-    for(const auto& goal : goals) {
-        auto score = convert(goal);
-        scoring_summary.push_back(score);
-    }
-    return scoring_summary;
-}
-
-void to_json(json& j, const CalendarDate& d) {
-    j = json{{"day", d.day}, {"month", d.month}, {"year", d.year }};
-}
-void from_json(const json& j, CalendarDate& d) {
-    j.at("day").get_to(d.day);
-    j.at("month").get_to(d.month);
-    j.at("year").get_to(d.year);
-}
-
-void to_json(json& j, const GameInfo& gi) {
-    j = json{
-            { "home", gi.m_home }, {"away", gi.m_away},
-            { "date", {"day", gi.m_date.day}, {"month", gi.m_date.month}, {"year", gi.m_date.year }},
-            { "gid", gi.m_game_id }
-    };
-}
-
-void from_json(const json& j, Goal& goal) {
-
-    int minutes = 0;
-    int seconds = 0;
-    int period_number = 0;
-    j.at("goal_number").get_to(goal.m_goal_number);
-    j.at("player").get_to(goal.m_goal_scorer);
-    j.at("team").get_to(goal.m_scoring_team);
-    j.at("period").at("number").get_to(period_number);
-    j.at("period").at("time").at("minutes").get_to(minutes);
-    j.at("period").at("time").at("seconds").get_to(seconds);
-}
-
-void from_json(const json& j, GameInfo& gi) {
-    j.at("home").get_to(gi.m_home);
-    j.at("away").get_to(gi.m_away);
-    j.at("date").get_to(gi.m_date);
-    j.at("gid").get_to(gi.m_game_id);
-}
-
-void from_json(const json& j, Game& game) {
-    j.at("game_info").get_to(game.m_game_info);
-    j.at("goals").get_to(game.m_goals);
-    j.at("year").get_to(d.year);
-}

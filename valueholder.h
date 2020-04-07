@@ -21,6 +21,7 @@ struct TeamsValueHolder {
             this->home = std::move(rhs.home);
             this->away = std::move(rhs.away);
         }
+        return *this;
     }
 
     T home;

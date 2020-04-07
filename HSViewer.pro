@@ -22,7 +22,9 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-CONFIG += c++17
+PRECOMPILED_HEADER = PCH.h
+
+CONFIG += c++17 precompile_header
 
 SOURCES += \
     charts/areachart.cpp \
@@ -44,7 +46,6 @@ SOURCES += \
     liveresultanalysiscontainer.cpp \
         main.cpp \
         mainwindow.cpp \
-    mdbconnection.cpp \
     gametime.cpp \
     gamelistitemmodel.cpp \
     requestinputwidget.cpp \
@@ -64,6 +65,7 @@ SOURCES += \
     utils.cpp
 
 HEADERS += \
+    PCH.h \
     charts/areachart.h \
     charts/gameresultbox.h \
     charts/linechart.h \
@@ -82,7 +84,6 @@ HEADERS += \
     gamedatapopup.h \
     liveresultanalysiscontainer.h \
         mainwindow.h \
-    mdbconnection.h \
     gametime.h \
     requestinputwidget.h \
     seasontablemodel.h \
@@ -110,9 +111,15 @@ FORMS += \
         mainwindow.ui \
         requestinputwidget.ui
 
-INCLUDEPATH += /usr/local/include/mongocxx/v_noabi /usr/local/include/bsoncxx/v_noabi
+INCLUDEPATH += /home/cx/dev/projects/HockeyStatsViewer/dep/json/include
 
-LIBS += -L/usr/local/lib -lmongocxx -lbsoncxx
+
+LIBS += -L/usr/local/lib
+
+precompile_header:!isEmpty(PRECOMPILED_HEADER) {
+    DEFINES += USING_PCH
+    message("USING PRE COMPILED HEADERS!")
+}
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
