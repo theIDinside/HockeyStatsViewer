@@ -1,6 +1,7 @@
 #!/bin/bash
 # TODO 1:  change this, so we can take a parameter for a dir to cd in to...
-cd /home/cx/dev/packages
+working_dir=`pwd`
+cd $HOME/dev/packages
 # /TODO
 
 check_for_cargo() {
@@ -13,6 +14,9 @@ check_for_cargo() {
 }
 
 check_for_cargo
+source $HOME/.cargo/env
+
+cd $working_dir
 
 cd hockeyscraper
 cargo build

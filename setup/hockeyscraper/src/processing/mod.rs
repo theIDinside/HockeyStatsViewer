@@ -37,9 +37,12 @@ pub fn process_game_infos(db_dir: &std::path::Path) -> GameInfoScraped {
     let compiled_file_name = "gameinfo.db";
     let partials_dir = db_dir.join("gi_partials");
     
+    let f = db_dir.join(compiled_file_name);
     if partials_dir.exists() { // means we haven't compiled a full DB yet.
         println!("\nGame Info partials directory exists... Scanning contents");
+
         let mut all_partials = Vec::new();
+        let mut count = 0;
         for entry in std::fs::read_dir(&partials_dir).expect(format!("Couldn't read directory {} or it's contents", partials_dir.display()).as_ref()) {
             let file_entry = entry.expect("Couldn't unwrap iterator for file");
             let mut buf = String::new();
@@ -58,6 +61,10 @@ pub fn process_game_infos(db_dir: &std::path::Path) -> GameInfoScraped {
                         .expect(format!("Couldn't de-serialize contents from file {}", file_entry.path().display()).as_ref());
                 all_partials.push(partials);
             }
+            count += 1;
+        }
+        if count == 0 {
+            return GameInfoScraped::None(None);
         }
         let flattened: Vec<InternalGameInfo> = all_partials.into_iter().flatten().collect();
         let de_duped: HashMap<usize, &InternalGameInfo> = flattened.iter().map(|gi| (gi.get_id(), gi)).collect();

@@ -1,5 +1,6 @@
 ## TODO
 
+
 1.	(Qt) Implement custom GUI component for Unibet like game-streak, which is a custom chart of sorts. It basically is 5 boxes, 
 	containing either the letter "L" or "W" denoting if that game, of the last 5 games (or longer), was won or lost. 
 	This box should also have hover capabilities, to trigger an advanced tooltip, basically a full window like tooltip, that 
