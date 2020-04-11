@@ -71,6 +71,76 @@ fn open_db_files<'a>(db_dir: &Path, info_file: &str, results_file: &str) -> (Fil
 
 pub const FULLSEASON: std::ops::Range<usize> = (2019020001usize .. (GAMES_IN_SEASON + 1));
 
+pub fn game_info_scrape_all() {
+    // Begin scraping of all game info
+    let full_season_ids: Vec<usize> = (FIRST_GAME .. (FIRST_GAME + GAMES_IN_SEASON + 1)).collect();
+    println!("There is no saved Game Info data. Begin scraping of Game Info DB...");
+    // We split the games into 100-game chunks, so if anything goes wrong, we at least write 100 games to disk at a time
+    let game_id_chunks: Vec<Vec<usize>> = full_season_ids.chunks(100).map(|chunk| {
+        chunk.into_iter().map(|v| *v).collect()
+    }).collect();
+    for (index, game_ids) in game_id_chunks.iter().enumerate() {
+        println!("Scraping game info for games {}-{}", game_ids[0], game_ids[game_ids.len()-1]);
+        let file_name = format!("gameinfo_partial-{}.db", index);
+        let file_path = Path::new(DB_DIR).join(&file_name);
+        let result = scrape_game_infos(&game_ids);
+        let (games, _errors) = process_results(&result);
+        let data = serde_json::to_string(&games).unwrap();            
+        let mut info_file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .open(&file_path).expect(format!("Couldn't open/create file {}", &file_path.display()).as_ref());            
+        match info_file.write_all(data.as_bytes()) {
+            Ok(_) => {
+                println!("Successfully wrote {} game infos to file {}. ({} bytes)", games.len(), &file_path.display(), data.len());
+            },
+            Err(e) => {
+                println!("Failed to write serialized data to {}", &file_path.display())
+            }
+        }
+    }
+}
+
+pub fn game_info_scrape_missing(db_root_dir: &Path, missing_games: Vec<usize>) -> Vec<InternalGameInfo> {
+    println!("Scraping remaining {} game info items", missing_games.len());
+    let chunks: Vec<Vec<usize>> = missing_games.chunks(100).map(|chunk| chunk.iter().map(|val| *val).collect()).collect();
+    let mut scraped_missing: Vec<Vec<InternalGameInfo>> = Vec::new();
+
+
+    let partials_dir = db_root_dir.join("gi_partials");
+    let partials_file_count = std::fs::read_dir(&partials_dir).expect("Could not open gi_partials directory").count();
+    
+    for (index, game_ids) in chunks.iter().enumerate() {
+        let file_name = format!("gameinfo_partial-{}.db", index + partials_file_count);
+        let file_path = &partials_dir.join(&file_name);
+        let result = scrape_game_infos(&game_ids);
+        let (games, _errors) = process_results(&result);
+        let data = serde_json::to_string(&game_ids).unwrap();
+        let mut info_file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .open(&file_path).expect(format!("Couldn't open/create file {}", file_path.display()).as_ref());            
+        match info_file.write_all(data.as_bytes()) {
+            Ok(_) => {
+                println!("Successfully wrote {} game infos to file {}. ({} bytes)", games.len(), file_path.display(), data.len());
+            },
+            Err(_e) => {}
+        }
+        scraped_missing.push(games.into_iter().map(|x| x.clone()).collect::<Vec<InternalGameInfo>>());
+    }
+    scraped_missing.into_iter().flatten().collect()
+}
+
+pub fn handle_serde_json_error(err: serde_json::Error) {
+    // do stuff with error
+    println!("{}", err);
+    panic!("De-serializing data failed. Make sure data is in the correct format, or delete all current data and re-scrape everything (Warning, may take a long time)");
+}
+
+
+
 fn main() {
 
     let full_season_ids: Vec<usize> = (FIRST_GAME .. (FIRST_GAME + GAMES_IN_SEASON + 1)).collect();
@@ -93,7 +163,7 @@ fn main() {
 
         }
     }
-    let (mut _game_info_file, mut game_results_file) =
+    let (mut game_info_file, mut game_results_file) =
         open_db_files(Path::new(DB_DIR),
                       "gameinfo.db",
                       "gameresults.db");
@@ -102,77 +172,22 @@ fn main() {
     let game_info_db = processing::process_game_infos(&db_root_dir);
     match game_info_db {
         GameInfoScraped::None(None) => {
-            // Begin scraping of all game info
-            println!("There is no saved Game Info data. Begin scraping of Game Info DB...");
-            // We split the games into 100-game chunks, so if anything goes wrong, we at least write 100 games to disk at a time
-            let game_id_chunks: Vec<Vec<usize>> = full_season_ids.chunks(100).map(|chunk| {
-                chunk.into_iter().map(|v| *v).collect()
-            }).collect();
-            for (index, game_ids) in game_id_chunks.iter().enumerate() {
-                println!("Scraping game info for games {}-{}", game_ids[0], game_ids[game_ids.len()-1]);
-                let file_name = format!("gameinfo_partial-{}.db", index);
-                let file_path = Path::new(DB_DIR).join(&file_name);
-                let result = scrape_game_infos(&game_ids);
-                let (games, _errors) = process_results(&result);
-                let data = serde_json::to_string(&games).unwrap();            
-                let mut info_file = OpenOptions::new()
-                .read(true)
-                .write(true)
-                .create(true)
-                .open(&file_path).expect(format!("Couldn't open/create file {}", &file_path.display()).as_ref());            
-                match info_file.write_all(data.as_bytes()) {
-                    Ok(_) => {
-                        println!("Successfully wrote {} game infos to file {}. ({} bytes)", games.len(), &file_path.display(), data.len());
-                    },
-                    Err(e) => {
-                        println!("Failed to write serialized data to {}", &file_path.display())
-                    }
-                }
-            }
+            game_info_scrape_all();
         },
-        GameInfoScraped::None(Some(_serde_err)) => {
+        GameInfoScraped::None(Some(serde_err)) => {
             // An error occured while trying to de-serialize stored data. we just panic for now
-            panic!("De-serializing data failed. Make sure data is in the correct format, or delete all current data and re-scrape everything (Warning, may take a long time)");
+            handle_serde_json_error(serde_err);
         },
         GameInfoScraped::Partial(partial_data, missing_games) => {
-            // process partial data, find out which game info's has not been scraped, then scrape missing_games
-            println!("Scraping remaining {} game info items", missing_games.len());
-            let chunks: Vec<Vec<usize>> = missing_games.chunks(100).map(|chunk| chunk.iter().map(|val| *val).collect()).collect();
-            let mut scraped_missing: Vec<Vec<InternalGameInfo>> = Vec::new();
-
-
-            let partials_dir = db_root_dir.join("gi_partials");
-            let partials_file_count = std::fs::read_dir(&partials_dir).expect("Could not open gi_partials directory").count();
-            
-            for (index, game_ids) in chunks.iter().enumerate() {
-                let file_name = format!("gameinfo_partial-{}.db", index + partials_file_count);
-                let file_path = &partials_dir.join(&file_name);
-                let result = scrape_game_infos(&game_ids);
-                let (games, _errors) = process_results(&result);
-                let data = serde_json::to_string(&game_ids).unwrap();
-                let mut info_file = OpenOptions::new()
-                .read(true)
-                .write(true)
-                .create(true)
-                .open(&file_path).expect(format!("Couldn't open/create file {}", file_path.display()).as_ref());            
-                match info_file.write_all(data.as_bytes()) {
-                    Ok(_) => {
-                        println!("Successfully wrote {} game infos to file {}. ({} bytes)", games.len(), file_path.display(), data.len());
-                    },
-                    Err(_e) => {}
-                }
-                scraped_missing.push(games.into_iter().map(|x| x.clone()).collect::<Vec<InternalGameInfo>>());
-            }
-            let missing_scraped: Vec<InternalGameInfo> = scraped_missing.into_iter().flatten().collect();
+            let missing_scraped = game_info_scrape_missing(db_root_dir, missing_games);
             let total: Vec<&InternalGameInfo> = partial_data.iter().chain(missing_scraped.iter()).collect();
-
             let de_duplicated: std::collections::HashMap<usize, &InternalGameInfo> = 
                 total.iter().map(|val| (val.get_id(), *val)).collect();
 
             assert_eq!(de_duplicated.len(), total.len());
             if total.len() == 1271 { 
                 let data = serde_json::to_string(&total).expect("Could not de-serialize fully compiled Game Info db to file");
-                match _game_info_file.write_all(data.as_bytes()) {
+                match game_info_file.write_all(data.as_bytes()) {
                     Ok(_) => {
                         println!("Successfully wrote serialized data of fully compiled Game Info db");
                     },
