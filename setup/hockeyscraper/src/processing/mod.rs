@@ -3,10 +3,17 @@ use super::data::gameinfo::InternalGameInfo;
 use std::io::{Read};
 use std::fs::OpenOptions;
 
+use crate::GAMES_IN_SEASON;
+
+pub type FileResult = Result<String, std::io::Error>;
+
+pub trait FileString {
+    fn string_read(&mut self) -> FileResult;
+}
 
 pub enum GameInfoScraped {
     All(Vec<InternalGameInfo>),
-    Partial(Vec<InternalGameInfo>, Vec<usize>),
+    Partial(Vec<InternalGameInfo>, Option<Vec<usize>>),
     None(Option<serde_json::Error>)
 }
 
@@ -32,15 +39,29 @@ fn check_missing(games: &Vec<InternalGameInfo>) -> Option<Vec<usize>> {
     }
 }
 
+fn verify_deserialized_content(data: &Vec<InternalGameInfo>) -> bool {
+    data.len() == GAMES_IN_SEASON
+}
+
 pub fn process_game_infos(db_dir: &std::path::Path) -> GameInfoScraped {
     assert_eq!(db_dir.exists(), true);
     let compiled_file_name = "gameinfo.db";
     let partials_dir = db_dir.join("gi_partials");
     
     let f = db_dir.join(compiled_file_name);
+    let mut gameinfo_buf = String::new();
+    let mut gameinfo_file = std::fs::File::open(f).expect("Couldn't open gameinfo.db file");
+    gameinfo_file.read_to_string(&mut gameinfo_buf).expect("Couldn't read contents of gameinfo.db file");
+
+    if gameinfo_buf.len() >= 2 {
+        let contents: Vec<InternalGameInfo> = serde_json::from_str(&gameinfo_buf).expect("Couldn't de-serialize Game Info db");
+        if verify_deserialized_content(&contents) {
+            return GameInfoScraped::All(contents);
+        }
+    }
+
     if partials_dir.exists() { // means we haven't compiled a full DB yet.
         println!("\nGame Info partials directory exists... Scanning contents");
-
         let mut all_partials = Vec::new();
         let mut count = 0;
         for entry in std::fs::read_dir(&partials_dir).expect(format!("Couldn't read directory {} or it's contents", partials_dir.display()).as_ref()) {
@@ -70,11 +91,11 @@ pub fn process_game_infos(db_dir: &std::path::Path) -> GameInfoScraped {
         let de_duped: HashMap<usize, &InternalGameInfo> = flattened.iter().map(|gi| (gi.get_id(), gi)).collect();
         assert_eq!(flattened.len(), de_duped.len());
         if let Some(missing) = check_missing(&flattened) {
-            GameInfoScraped::Partial(flattened, missing)
-        } else {
+            GameInfoScraped::Partial(flattened, Some(missing))
+        } else { // we have _all_ gameinfos saved as partials. Save it to compiled file.
             let mut full = flattened.clone();
             full.sort_by(|a,b| a.get_id().partial_cmp(&b.get_id()).unwrap());
-            GameInfoScraped::All(full)
+            GameInfoScraped::Partial(full, None)
         }
     } else {
         let game_info_full = db_dir.join(compiled_file_name);
@@ -89,7 +110,7 @@ pub fn process_game_infos(db_dir: &std::path::Path) -> GameInfoScraped {
             assert_eq!(data.len(), de_duped_data.len());
 
             if let Some(missing_games) = check_missing(&data) {
-                GameInfoScraped::Partial(data, missing_games)
+                GameInfoScraped::Partial(data, Some(missing_games))
             } else {
                 let mut full = data.clone();
                 full.sort_by(|a,b| a.get_id().partial_cmp(&b.get_id()).unwrap());

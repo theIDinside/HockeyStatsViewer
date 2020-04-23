@@ -245,7 +245,7 @@ std::vector<GameModel> DB::get_games(const std::string& team_name) {
         }
         return games;
     }
-    return {};
+    return games;
 }
 std::vector<GameModel> DB::get_games_before(const std::string& team, int game_id) {
     return {};

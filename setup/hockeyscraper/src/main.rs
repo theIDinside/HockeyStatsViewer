@@ -21,21 +21,30 @@ mod data;
 mod scrape;
 mod processing;
 
-
 use std::path::{Path};
 use std::fs::File;
 use std::io::{Write, Read};
 use std::time::Instant;
+use std::collections::HashMap;
+use std::fs::OpenOptions;
 
-use crate::data::{game::{Game, IntermediateGame}, gameinfo::{InternalGameInfo}};
-use crate::scrape::{ScrapeResults, scrape_game_infos, process_results};
-use processing::GameInfoScraped;
+use data::{game::{Game, IntermediateGame}, gameinfo::{InternalGameInfo}, team::{construct_league, write_league_to_file}};
+use scrape::{ScrapeResults, scrape_game_infos, process_results};
+use processing::{GameInfoScraped, FileString};
 
 const BASE_URL: &'static str = "https://www.nhl.com/gamecenter";
 const FIRST_GAME: usize = 2019020001;
 const GAMES_IN_SEASON: usize = 1271;
 const LAST_GAME_DUE_TO_COVID: usize = 2019021082;
 const DB_DIR: &'static str = "./assets/db";
+
+impl processing::FileString for std::fs::File {
+    fn string_read(&mut self) -> processing::FileResult {
+        let mut buf = String::new();
+        self.read_to_string(&mut buf)?;
+        Ok(buf)
+    }
+}
 
 /// Utility wrapper around scraping, so that main() doesn't get cluttered with calls to println!
 fn scrape_and_log(games: &Vec<&InternalGameInfo>) -> Vec<ScrapeResults<Game>> {
@@ -46,9 +55,6 @@ fn scrape_and_log(games: &Vec<&InternalGameInfo>) -> Vec<ScrapeResults<Game>> {
     println!("Tried scraping {} games in {}ms", game_results.len(), scrape_time_elapsed);
     game_results
 }
-
-use std::fs::OpenOptions;
-use crate::data::team::{construct_league, write_league_to_file};
 
 /// db_dir is the folder where results_file and info_file should be opened from/created in. <br>
 /// Returns a tuple of the opened file handles
@@ -142,8 +148,6 @@ pub fn handle_serde_json_error(err: serde_json::Error) {
 
 
 fn main() {
-
-    let full_season_ids: Vec<usize> = (FIRST_GAME .. (FIRST_GAME + GAMES_IN_SEASON + 1)).collect();
     let season_until_covid: Vec<usize> = (FIRST_GAME .. (LAST_GAME_DUE_TO_COVID + 1)).collect::<Vec<usize>>();
     let db_root_dir = Path::new(DB_DIR);
 
@@ -178,10 +182,10 @@ fn main() {
             // An error occured while trying to de-serialize stored data. we just panic for now
             handle_serde_json_error(serde_err);
         },
-        GameInfoScraped::Partial(partial_data, missing_games) => {
+        GameInfoScraped::Partial(partial_data, Some(missing_games)) => {
             let missing_scraped = game_info_scrape_missing(db_root_dir, missing_games);
             let total: Vec<&InternalGameInfo> = partial_data.iter().chain(missing_scraped.iter()).collect();
-            let de_duplicated: std::collections::HashMap<usize, &InternalGameInfo> = 
+            let de_duplicated: HashMap<usize, &InternalGameInfo> = 
                 total.iter().map(|val| (val.get_id(), *val)).collect();
 
             assert_eq!(de_duplicated.len(), total.len());
@@ -200,13 +204,24 @@ fn main() {
             }
 
         },
-        GameInfoScraped::All(full) => {
+        GameInfoScraped::Partial(all_data_as_partials, None) => { // Means we have all the data, it is just not compiled to a single file yet.
+            let data = serde_json::to_string(&all_data_as_partials).expect("Could not de-serialize fully compiled Game Info db to file");
+            match game_info_file.write_all(data.as_bytes()) {
+                Ok(_) => {
+                    println!("Successfully compiled partial data to single file & write to disk!");
+                },
+                Err(e) => {
+                    println!("Could not compile partial data and write to file: {}", e);
+                }
+            }
+        },
+        GameInfoScraped::All(season) => {
             // begin scraping & processing of Game Result data
             let mut buf = String::new();
             match game_results_file.read_to_string(&mut buf) {
                 Ok(bytes) => {
                     if bytes <= 2 {
-                        let refs = full.iter().take_while(|x| x.get_id() <= LAST_GAME_DUE_TO_COVID).map(|x| x).collect();
+                        let refs = season.iter().take_while(|x| x.get_id() <= LAST_GAME_DUE_TO_COVID).map(|x| x).collect();
                         let result = scrape_and_log(&refs);
                         let (game_results, errors) = scrape::process_gr_results(&result);
                         println!("Total game results scraped: {}", &game_results.len());
@@ -219,19 +234,18 @@ fn main() {
                                 println!("Could not write serialized data to file");
                             }
                         }
-                    } else {
+                    } else { //
                         let data: Vec<IntermediateGame> = serde_json::from_str(&buf).expect("Couldn't de-serialize data for Game results");
                         let games: Vec<Game> = data.into_iter().map(|im_game| Game::from(im_game)).collect();
                         println!("Games de-serialized: {}. No more games to scrape from this regular season.", games.len());        
                     }
                 },
                 Err(e) => {
-    
+                    println!("Could not read game results file: {}", e);
                 }
             }
         }
     }
-
 }
 
 
@@ -249,7 +263,7 @@ mod tests {
         let p = Path::new("./tests/scrape_and_serialize_5_games.db");
         let mut f = OpenOptions::new().write(true).create(true).open(p).expect("Couldn't create file ./tests/scrape_and_serialize_5_games.db");
         let results = scrape_game_infos(&r);
-        let (games, errors) = process_results(&results);
+        let (games, _errors) = process_results(&results);
         let data = serde_json::to_string(&games).unwrap();
         match f.write_all(data.as_bytes()) {
             Ok(_) => {
@@ -263,7 +277,7 @@ mod tests {
 
     #[test]
     fn deserialize_game() {
-        let data = 
+        let _data = 
         r#"{"game_info":{"home":"TOR","away":"OTT","gid":2019020001,"date":{"year":2019,"month":10,"day":2}},
             "goals":
                 [{"goal_number":1,"player":"7 B.TKACHUK(1)","team":"OTT","period":{"number":1,"time":{"minutes":0,"seconds":25}},"strength":"Even"},

@@ -10,6 +10,9 @@ set(CMAKE_AUTOUIC ON)
 
 set(CMAKE_CXX_STANDARD 17)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
+message("Output directory is: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}. Cmake binary dir is: ${CMAKE_BINARY_DIR}. Project source dir: ${PROJECT_SOURCE_DIR}")
+
 set(Qt5_DIR /home/cx/apps/Qt/5.14.2/gcc_64/lib/cmake/Qt5/)
 find_package(Qt5 COMPONENTS Widgets Core Gui Charts REQUIRED)
 
@@ -23,6 +26,10 @@ add_subdirectory(./dep/instrumentation)
 
 option(JSON_BuildTests OFF) # We don't want to build the damn tests. It takes 5 times as long as building my project.
 add_subdirectory(./dep/json)
+
+
+# TODO: This is not working how I want it to yet
+# add_subdirectory(setup/hockeyscraper)
 
 add_executable(hsviewer
     ${SOURCES_WITH_FORMS}
@@ -50,3 +57,6 @@ target_precompile_headers(hsviewer PUBLIC <string> <memory> <vector> <iostream>
     <chrono> <ctime> <set> <unordered_map> <array> 
     <algorithm> <numeric> <optional> <cmath> 
     <QGraphicsView> <QObject> <QWidget> <QChart> <QChartView> <QLineSeries> <QAreaSeries> <QString>)
+
+set_target_properties(hsviewer PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)

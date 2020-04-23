@@ -13,3 +13,4 @@ target
 assets/
 cmake-build-debug/
 HSViewer.pro.user.bafc473
+bin/

@@ -18,6 +18,10 @@ bool operator>(const CalendarDate& lhs, const CalendarDate& rhs) {
     return !(lhs < rhs);
 }
 
+std::ostream& operator<<(std::ostream& os, const CalendarDate& c) {
+    os << c.year << "-" << c.month << "-" << c.day;
+    return os;
+}
 
 bool operator==(const CalendarDate& lhs, const CalendarDate& rhs) {
     return (lhs.year == rhs.year && lhs.month == rhs.month && lhs.day == rhs.day);
