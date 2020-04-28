@@ -52,12 +52,41 @@ void to_json(json& j, const Goal& goal) {
 }
 
 void from_json(const json& j, Goal& goal) {
+    // TODO: This is not fully implemented and will create runtime logical errors (strength not read for example)
     j.at("goal_number").get_to(goal.m_goal_number);
     j.at("player").get_to(goal.m_goal_scorer);
     j.at("team").get_to(goal.m_scoring_team);
     j.at("period").at("number").get_to(goal.m_time.m_period);
     j.at("period").at("time").at("minutes").get_to(goal.m_time.m_time.m_minutes);
     j.at("period").at("time").at("seconds").get_to(goal.m_time.m_time.m_seconds);
+
+    std::string strength = j["strength"];
+    if(strength == "Even") {
+        goal.m_strength = TeamStrength::TS_EVEN;
+    } else if(strength == "PowerPlay") {
+        goal.m_strength = TeamStrength::TS_POWER_PLAY;
+    } else if(strength == "EvenEmptyNet") {
+        goal.m_strength = TeamStrength::TS_EVEN_EMPTY_NET;
+    } else if(strength == "Shootout") {
+        goal.m_strength = TeamStrength::TS_SHOOTOUT;
+    } else if(strength == "ShortHanded") {
+        goal.m_strength = TeamStrength::TS_SHORT_HANDED;
+    } else if(strength == "PowerPlayPenaltyShot") {
+        goal.m_strength = TeamStrength::TS_POWER_PLAY_PENALTY_SHOT;
+    } else if(strength == "ShortHandedEmptyNet") {
+        goal.m_strength = TeamStrength::TS_SHORT_HANDED_EMPTY_NET;
+    } else if(strength == "ShortHandedPenaltyShot") {
+        goal.m_strength = TeamStrength::TS_SHORT_HANDED_PENALTY_SHOT;
+    } else if(strength == "PowerPlayEmptyNet") {
+        goal.m_strength = TeamStrength::TS_POWER_PLAY_EMPTY_NET;
+    } else if(strength == "EvenPenaltyShot") {
+        goal.m_strength = TeamStrength::TS_EVEN_PENALTY_SHOT;
+    } else if(strength == "PenaltyShot") {
+        goal.m_strength = TeamStrength::TS_PENALTY_SHOT;
+    } else {
+        std::cout << "failed reading strength for goal. Exiting" << std::endl;
+        std::abort();
+    }
 }
 
 void from_json(const json& j, IntResults& value_pair) {

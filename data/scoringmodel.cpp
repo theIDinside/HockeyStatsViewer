@@ -111,6 +111,48 @@ ScoringModel::Assists ScoringModel::assists() const
     return std::make_pair(m_firstAssist, m_secondAssist);
 }
 
+std::ostream& operator<<(std::ostream& os, const Strength& str) {
+    std::string output;
+    switch (str)
+    {
+        case Strength::EVEN:
+        output = "Even";
+        break;
+        case Strength::EVEN_PENALTY_SHOT:
+        output = "Even Penalty Shot";
+        break;
+        case Strength::PENALTY_SHOT:
+        output = "Penalty Shot";
+        break;
+        case Strength::EVEN_EMPTY_NET:
+        output = "Even Empty Net";
+        break;
+        case Strength::POWER_PLAY:
+        output = "Power play";
+        break;
+        case Strength::SHORT_HANDED:
+        output = "Short handed";
+        break;
+        case Strength::SHORT_HANDED_EMPTY_NET:
+        output = "Short handed empty net";
+        break;
+        case Strength::SHORT_HANDED_PENALTY_SHOT:
+        output = "Short handed penalty shot";
+        break;
+        case Strength::POWER_PLAY_EMPTY_NET:
+        output = "Powerplay empty net";
+        break;
+        case Strength::POWER_PLAY_PENALTY_SHOT:
+        output = "Power play penalty shot";
+        break;
+        case Strength::SHOOTOUT:
+        output = "Shootout";
+        break;
+    }
+    os << output;
+    return os;
+}
+
 bool ScoringModel::is_empty_net() const
 {
     if(m_strength == Strength::EVEN_EMPTY_NET || m_strength == Strength::POWER_PLAY_EMPTY_NET || m_strength == Strength::SHORT_HANDED_EMPTY_NET) {

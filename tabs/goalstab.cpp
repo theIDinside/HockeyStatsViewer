@@ -73,6 +73,8 @@ void GoalsTab::update_chart_data(const TeamStats &home, const TeamStats &away)
     StatTable* model = new StatTable    (tableRowHeaders, mTable);
     auto [hENGames, hWon] = home.empty_net_scoring();
     auto [aENGames, aWon] = away.empty_net_scoring();
+    std::cout << "Empty net goals by home team: " << hENGames << '\n';
+    std::cout << "Empty net goals by away team: " << aENGames << '\n';
     auto [hENLGames, hLost] = home.empty_net_letups();
     auto [aENLGames, aLost] = away.empty_net_letups();
     auto [hGamesWPPGoals, hTotalGames] = home.games_with_pp_goals();

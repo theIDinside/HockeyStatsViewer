@@ -490,7 +490,7 @@ TeamStats::ResultRatio TeamStats::empty_net_scoring() const{
         if(game.winning_team() == m_team) {
            ++won;
            for(const auto& goal : game.goals()) {
-               if(goal.is_empty_net() && teams_map()[goal.scoring_team()] == m_team) {
+               if(goal.is_empty_net() && goal.scoring_team() == m_team) {
                    ++emptyNettingGames;
                    break; // we don't want to actually count two empty net goals in one game. We are only interested in the ratio of empty net goals/games
                }
