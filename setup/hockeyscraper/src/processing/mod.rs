@@ -53,10 +53,15 @@ pub fn process_game_infos(db_dir: &std::path::Path) -> GameInfoScraped {
     let mut gameinfo_file = std::fs::File::open(f).expect("Couldn't open gameinfo.db file");
     gameinfo_file.read_to_string(&mut gameinfo_buf).expect("Couldn't read contents of gameinfo.db file");
 
+    println!("Compiled file size: {}", gameinfo_buf.len());
+
     if gameinfo_buf.len() >= 2 {
         let contents: Vec<InternalGameInfo> = serde_json::from_str(&gameinfo_buf).expect("Couldn't de-serialize Game Info db");
         if verify_deserialized_content(&contents) {
             return GameInfoScraped::All(contents);
+        } else {
+            println!("De-serialized content does not match {} games. Found games: {}", GAMES_IN_SEASON, contents.len());
+            panic!("Exiting");
         }
     }
 

@@ -34,7 +34,7 @@ use processing::{GameInfoScraped, FileString};
 
 const BASE_URL: &'static str = "https://www.nhl.com/gamecenter";
 const FIRST_GAME: usize = 2019020001;
-const GAMES_IN_SEASON: usize = 1271;
+const GAMES_IN_SEASON: usize = 1270;
 const LAST_GAME_DUE_TO_COVID: usize = 2019021082;
 const DB_DIR: &'static str = "./assets/db";
 
@@ -217,6 +217,7 @@ fn main() {
         },
         GameInfoScraped::All(season) => {
             // begin scraping & processing of Game Result data
+            println!("All game infos are scraped & serialized to 1 file. Begin scraping of results...");
             let mut buf = String::new();
             match game_results_file.read_to_string(&mut buf) {
                 Ok(bytes) => {
