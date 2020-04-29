@@ -116,38 +116,27 @@ std::ostream& operator<<(std::ostream& os, const Strength& str) {
     switch (str)
     {
         case Strength::EVEN:
-        output = "Even";
-        break;
+            output = "Even"; break;
         case Strength::EVEN_PENALTY_SHOT:
-        output = "Even Penalty Shot";
-        break;
+            output = "Even Penalty Shot"; break;
         case Strength::PENALTY_SHOT:
-        output = "Penalty Shot";
-        break;
+            output = "Penalty Shot"; break;
         case Strength::EVEN_EMPTY_NET:
-        output = "Even Empty Net";
-        break;
+            output = "Even Empty Net"; break;
         case Strength::POWER_PLAY:
-        output = "Power play";
-        break;
-        case Strength::SHORT_HANDED:
-        output = "Short handed";
-        break;
+            output = "Power play";break;
+        case Strength::SHORT_HANDED: 
+            output = "Short handed"; break;
         case Strength::SHORT_HANDED_EMPTY_NET:
-        output = "Short handed empty net";
-        break;
+            output = "Short handed empty net"; break;
         case Strength::SHORT_HANDED_PENALTY_SHOT:
-        output = "Short handed penalty shot";
-        break;
+            output = "Short handed penalty shot"; break;
         case Strength::POWER_PLAY_EMPTY_NET:
-        output = "Powerplay empty net";
-        break;
+            output = "Powerplay empty net"; break;
         case Strength::POWER_PLAY_PENALTY_SHOT:
-        output = "Power play penalty shot";
-        break;
+            output = "Power play penalty shot"; break;
         case Strength::SHOOTOUT:
-        output = "Shootout";
-        break;
+            output = "Shootout"; break;
     }
     os << output;
     return os;

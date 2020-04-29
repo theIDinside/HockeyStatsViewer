@@ -505,7 +505,7 @@ TeamStats::ResultRatio TeamStats::games_with_pp_goals() const
     auto p = std::make_pair(0, m_gamesPlayed.size());
     p.first = std::accumulate(m_gamesPlayed.cbegin(), m_gamesPlayed.cend(), 0, [&](auto& acc, const auto& game) {
        for(const auto& goal : game.goals()) {
-        if(team_scoring(goal) == m_team && goal.strength() == Strength::POWER_PLAY) {
+        if(goal.scoring_team() == m_team && goal.strength() == Strength::POWER_PLAY) {
             return acc + 1;
         }
        }
