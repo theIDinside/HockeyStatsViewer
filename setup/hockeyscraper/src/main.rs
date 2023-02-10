@@ -14,6 +14,7 @@ extern crate serde;
 extern crate serde_json;
 extern crate scraper;
 extern crate select;
+extern crate chrono;
 #[macro_use] extern crate serde_derive;
 extern crate pbr;
 
@@ -28,6 +29,7 @@ use std::time::Instant;
 use std::collections::HashMap;
 use std::fs::OpenOptions;
 
+use chrono::Datelike;
 use data::{game::{Game, IntermediateGame}, gameinfo::{InternalGameInfo}, team::{construct_league, write_league_to_file}};
 use scrape::{ScrapeResults, scrape_game_infos, process_results};
 use processing::{GameInfoScraped, FileString};
@@ -221,7 +223,12 @@ fn main() {
             match game_results_file.read_to_string(&mut buf) {
                 Ok(bytes) => {
                     if bytes <= 2 {
-                        let refs = season.iter().map(|x| x).collect();
+                        let today = chrono::Utc::now();
+                        let date_tuple = (today.day(), today.month(), today.year() as u32);
+                        let refs = season.iter()
+                          .filter(|g| g.is_played(date_tuple))
+                          .map(|x| x)
+                          .collect();
                         let result = scrape_and_log(&refs);
                         let (game_results, errors) = scrape::process_gr_results(&result);
                         println!("Total game results scraped: {}", &game_results.len());

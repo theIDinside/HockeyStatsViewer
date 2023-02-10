@@ -63,6 +63,10 @@ impl InternalGameInfo {
 
     pub fn make_key_value_pair(gi: InternalGameInfo) -> (usize, InternalGameInfo) { (gi.get_id(), gi ) }
 
+    pub fn is_played(&self, (day, month, year): (u32, u32, u32)) -> bool {
+      self.date.is_before(day, month, year)
+    }
+
     pub fn get_date_tuple(&self) -> (u32, u32, u32) {
         (self.date.day, self.date.month, self.date.year as u32)
     }

@@ -21,5 +21,23 @@ pub mod types {
 // of weak references to all GameInfo objects which are played that day, defined by this key/hash
     impl CalendarDate {
         pub fn new(day: u32, month: u32, year: u32) -> CalendarDate { CalendarDate { day, month, year } }
+
+        pub fn is_before(&self, day: u32, month: u32, year: u32) -> bool {
+          if self.year < year {
+            return true;
+          } else if self.year > year {
+            return false;
+          } else {
+            if self.month <= month {
+              if self.day < day {
+                return true;
+              } else {
+                return false;
+              }
+            } else {
+              return false;
+            }
+          }
+        }
     }
 }
