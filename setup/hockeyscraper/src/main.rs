@@ -221,7 +221,7 @@ fn main() {
             match game_results_file.read_to_string(&mut buf) {
                 Ok(bytes) => {
                     if bytes <= 2 {
-                        let refs = season.iter().take_while(|x| x.get_id() <= LAST_GAME_DUE_TO_COVID).map(|x| x).collect();
+                        let refs = season.iter().map(|x| x).collect();
                         let result = scrape_and_log(&refs);
                         let (game_results, errors) = scrape::process_gr_results(&result);
                         println!("Total game results scraped: {}", &game_results.len());
