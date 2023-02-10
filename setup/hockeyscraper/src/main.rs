@@ -33,9 +33,9 @@ use scrape::{ScrapeResults, scrape_game_infos, process_results};
 use processing::{GameInfoScraped, FileString};
 
 const BASE_URL: &'static str = "https://www.nhl.com/gamecenter";
-const FIRST_GAME: usize = 2019020001;
-const GAMES_IN_SEASON: usize = 1270;
-const LAST_GAME_DUE_TO_COVID: usize = 2019021082;
+
+const FIRST_GAME: usize = 2022020001;
+const GAMES_IN_SEASON: usize = 1312;
 const DB_DIR: &'static str = "./assets/db";
 
 impl processing::FileString for std::fs::File {
@@ -148,7 +148,6 @@ pub fn handle_serde_json_error(err: serde_json::Error) {
 
 
 fn main() {
-    let season_until_covid: Vec<usize> = (FIRST_GAME .. (LAST_GAME_DUE_TO_COVID + 1)).collect::<Vec<usize>>();
     let db_root_dir = Path::new(DB_DIR);
 
     let args: Vec<String> = std::env::args().skip(1).collect();
