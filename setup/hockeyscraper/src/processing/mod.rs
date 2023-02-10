@@ -64,6 +64,11 @@ pub fn process_game_infos(db_dir: &std::path::Path) -> GameInfoScraped {
             panic!("Exiting");
         }
     }
+    
+    match std::fs::create_dir(&partials_dir) {
+        Ok(()) => println!("partials dir created..."),
+        Err(err) => println!("Failed to create partials dir {}", err),
+    };
 
     if partials_dir.exists() { // means we haven't compiled a full DB yet.
         println!("\nGame Info partials directory exists... Scanning contents");
