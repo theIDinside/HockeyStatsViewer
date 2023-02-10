@@ -68,6 +68,7 @@ pub fn get_team_abbreviations(team_id: usize) -> Option<Vec<&'static str>> {
         29  => Some(vec!["TBL", "T.B"]),
         30  => Some(vec!["FLO", "FLA"]),
         31  => Some(vec!["STL"]),
+        32  => Some(vec!["SEA"]),
         _ => None
     }
 }
@@ -106,6 +107,7 @@ pub fn get_id(team_name: &String) -> Option<usize> {
         "TAMPA BAY LIGHTNING" | "TBL" | "T.B"           => Some(29),
         "FLORIDA PANTHERS" | "FLO" | "FLA"              => Some(30),
         "ST LOUIS BLUES" | "STL"                        => Some(31),
+        "SEATTLE KRAKEN" | "SEA"                        => Some(32),
         _ => None
     }
 }
@@ -144,6 +146,7 @@ pub fn get_team_name(team_id: usize) -> Option<&'static str> {
         29  => Some("TAMPA BAY LIGHTNING"),
         30  => Some("FLORIDA PANTHERS"),
         31  => Some("ST LOUIS BLUES"),
+        32 => Some("SEATTLE KRAKEN"),
         _ => None
     }
 }
