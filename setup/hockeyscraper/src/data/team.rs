@@ -185,6 +185,7 @@ pub fn get_abbreviated_name(team_id: usize) -> Option<&'static str> {
         29  => Some("TBL"),
         30  => Some("FLA"),
         31  => Some("STL"),
+        32  => Some("SEA"),
         _ => None
     }
 }
