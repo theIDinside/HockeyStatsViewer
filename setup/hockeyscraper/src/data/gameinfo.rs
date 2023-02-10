@@ -68,15 +68,15 @@ impl InternalGameInfo {
     }
 
     pub fn get_event_summary_url(&self) -> String {
-        format!("http://www.nhl.com/scores/htmlreports/20192020/ES0{}.HTM", self.gid - 2019000000)
+        format!("http://www.nhl.com/scores/htmlreports/20222023/ES0{}.HTM", self.gid - 2022000000)
     }
 
     pub fn get_game_summary_url(&self) -> String {
-        format!("http://www.nhl.com/scores/htmlreports/20192020/GS0{}.HTM", self.gid - 2019000000)
+        format!("http://www.nhl.com/scores/htmlreports/20222023/GS0{}.HTM", self.gid - 2022000000)
     }
 
     pub fn get_shot_summary_url(&self) -> String {
-        format!("http://www.nhl.com/scores/htmlreports/20192020/SS0{}.HTM", self.gid - 2019000000)
+        format!("http://www.nhl.com/scores/htmlreports/20222023/SS0{}.HTM", self.gid - 2022000000)
     }
 
     pub fn get_home_team(&self) -> &String { &self.home }
