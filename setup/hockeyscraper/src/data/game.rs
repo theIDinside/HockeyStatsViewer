@@ -6,7 +6,7 @@ use crate::scrape::errors::BuilderError;
 /// S.E = self explanatory
 
 /// This is a real fine hack by me. I haven't set out to learn how to implement a custom Deserialize (yet), so for now I deserialize to this, 
-/// then convert to struct Game from that. The problem lies with the goals field, as the final Game struct has Goals represented with 
+/// then convert to struct Game from that. The problem lies with the goals field, as the final Game struct has Goals represented with
 /// the period field as a Period enum. And custom deserializing of enums is a bit tricky, so for now this will do, as the main purpose
 /// of this part of the application is the serialization part. The custom serialization for Period is implemented in stats.rs, 
 /// the rest is derived using #[derive(Deserialize)]
@@ -76,17 +76,15 @@ impl Game {
     /// This struct can be optimized. But there's really no point, as it *will* be serialized and not
     /// used in the front-end which is entirely written in C++
     pub fn size_of(&self) -> usize {
-        let mut sz = 0usize;
-        sz += std::mem::size_of::<InternalGameInfo>();
-        sz += self.goals.len() * std::mem::size_of::<Goal>();
-        sz += self.winning_team.len() * std::mem::size_of::<char>();
-        sz += std::mem::size_of::<Score>();
-        sz += self.shots.len() * std::mem::size_of::<Shots>();
-        sz += std::mem::size_of::<PowerPlay>() * 2;
-        sz += std::mem::size_of::<TakeAways>();
-        sz += std::mem::size_of::<GiveAways>();
-        sz += std::mem::size_of::<FaceOffs>();
-        sz
+        std::mem::size_of::<InternalGameInfo>() +
+        self.goals.len() * std::mem::size_of::<Goal>() +
+        self.winning_team.len() * std::mem::size_of::<char>() +
+        std::mem::size_of::<Score>() +
+        self.shots.len() * std::mem::size_of::<Shots>() +
+        std::mem::size_of::<PowerPlay>() * 2 +
+        std::mem::size_of::<TakeAways>() +
+        std::mem::size_of::<GiveAways>() +
+        std::mem::size_of::<FaceOffs>()
     }
 }
 
