@@ -4,40 +4,30 @@ pub mod stats;
 pub mod team;
 
 pub mod types {
-    #[derive(Clone, Copy, Debug, Hash, Eq, Deserialize, Serialize)]
-    pub struct CalendarDate {
-        pub year: u32,
-        pub month: u32,
-        pub day: u32,
+  #[derive(Clone, Copy, Debug, Hash, Eq, Deserialize, Serialize)]
+  pub struct CalendarDate {
+    pub year: u32,
+    pub month: u32,
+    pub day: u32,
+  }
+
+  impl PartialEq for CalendarDate {
+    fn eq(&self, other: &Self) -> bool {
+      self.day == other.day && self.month == other.month && self.year == other.year
+    }
+  }
+
+  // Used as a key in the Server.schedule hashmap. This key/hash is used to retrieve a HashSet
+  // of weak references to all GameInfo objects which are played that day, defined by this key/hash
+  impl CalendarDate {
+    pub fn new(day: u32, month: u32, year: u32) -> CalendarDate {
+      CalendarDate { day, month, year }
     }
 
-    impl PartialEq for CalendarDate {
-        fn eq(&self, other: &Self) -> bool {
-            self.day == other.day && self.month == other.month && self.year == other.year
-        }
+    pub fn is_before(&self, day: u32, month: u32, year: u32) -> bool {
+      let lhs = (self.year, self.month, self.day);
+      let rhs = (year, month, day);
+      lhs < rhs
     }
-
-    // Used as a key in the Server.schedule hashmap. This key/hash is used to retrieve a HashSet
-// of weak references to all GameInfo objects which are played that day, defined by this key/hash
-    impl CalendarDate {
-        pub fn new(day: u32, month: u32, year: u32) -> CalendarDate { CalendarDate { day, month, year } }
-
-        pub fn is_before(&self, day: u32, month: u32, year: u32) -> bool {
-          if self.year < year {
-            return true;
-          } else if self.year > year {
-            return false;
-          } else {
-            if self.month <= month {
-              if self.day < day {
-                return true;
-              } else {
-                return false;
-              }
-            } else {
-              return false;
-            }
-          }
-        }
-    }
+  }
 }
