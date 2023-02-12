@@ -70,6 +70,7 @@ impl ScrapedSeason {
   pub fn new(file: &Path) -> Result<ScrapedSeason, std::io::Error> {
     let mut game_results = std::fs::OpenOptions::new()
       .read(true)
+      .write(true)
       .create(true)
       .open(file)
       .expect(format!("Couldn't open/create file {}", file.display()).as_ref());

@@ -342,54 +342,131 @@ fn scrape_game(client: &reqwest::blocking::Client, game_info: &InternalGameInfo)
   }
 }
 
-pub fn scrape_game_results(games: &Vec<&InternalGameInfo>) -> Vec<ScrapeResults<Game>> {
+pub fn scrape_game_results(thread_count: usize, games: &Vec<&InternalGameInfo>) -> Vec<ScrapeResults<Game>> {
   println!("Running game scraping...");
   use pbr::ProgressBar;
   // returns a vector of tuple of two links, one to the game summary and one to the event summary
+
+  let per_thread_work_count = (games.len() as f32 / thread_count as f32).ceil() as usize;
+  let mut per_thread_work: Vec<Vec<InternalGameInfo>> = games
+    .chunks(per_thread_work_count)
+    .map(|slice| {
+      let mut res = Vec::with_capacity(slice.len());
+      for &i in slice {
+        res.push(i.clone());
+      }
+      res
+    })
+    .collect();
+  let (tx, rx) = std::sync::mpsc::channel();
+  let mut jobs = vec![];
+  for _ in 0..thread_count {
+    if let Some(work) = per_thread_work.pop() {
+      let tx_clone = tx.clone();
+      let job = std::thread::spawn(move || {
+        let work = work;
+        let client = Client::new();
+        let mut result = Vec::new();
+        for game_info in work {
+          let res = scrape_game(&client, &game_info);
+          match res {
+            Ok(game) => {
+              result.push(Ok(game));
+            }
+            Err(e) => {
+              result.push(Err((game_info.get_id(), e)));
+            }
+          }
+          tx_clone.send(1);
+        }
+        drop(tx_clone);
+        result
+      });
+      jobs.push(job);
+    }
+  }
+  drop(tx);
   let mut result = Vec::new();
-  let client = Client::new();
   let mut pb = ProgressBar::new(games.len() as u64);
   pb.format("╢▌▌░╟");
-  for game_info in games {
-    let res = scrape_game(&client, &game_info);
-    match res {
-      Ok(game) => {
-        result.push(Ok(game));
-      }
-      Err(e) => {
-        result.push(Err((game_info.get_id(), e)));
-      }
-    }
+  for _ in rx {
     pb.inc();
+  }
+
+  for job in jobs {
+    match job.join() {
+      Ok(res) => result.extend(res),
+      Err(e) => panic!("Failed to scrape game data: {:?}", e),
+    }
   }
   pb.finish_print(format!("Done scraping game results for {} games.", games.len()).as_ref());
   result
 }
 
-pub fn scrape_game_infos(game_ids: &Vec<usize>) -> Vec<ScrapeResults<InternalGameInfo>> {
+pub fn scrape_game_infos(thread_count: usize, game_ids: &Vec<usize>) -> Vec<ScrapeResults<InternalGameInfo>> {
   // Rust ranges are end-exclusive. So we have to add 1
   use pbr::ProgressBar;
   let count = game_ids.len() as u64;
   let mut pb = ProgressBar::new(count);
   pb.format("╢▌▌░╟");
-  let mut result = Vec::new();
-  let client = Client::new();
-  for id in game_ids {
-    let url_string = format!("{}/{}", BASE_URL, id);
-    let r = client.get(&url_string).send();
-    if let Ok(resp) = r {
-      let url = resp.url();
-      let g_info_result = InternalGameInfo::from_url(url);
-      match g_info_result {
-        Ok(res) => result.push(Ok(res)),
-        Err(e) => result.push(Err((*id, e))),
-      }
-    } else if let Err(e) = r {
-      result.push(Err((*id, BuilderError::from(e))));
+
+  let per_thread_work_count = (game_ids.len() as f32 / thread_count as f32).ceil() as usize;
+  let mut per_thread_work: Vec<Vec<usize>> = game_ids
+    .chunks(per_thread_work_count)
+    .map(|slice| slice.into())
+    .collect();
+  let (tx, rx) = std::sync::mpsc::channel();
+  let mut jobs = vec![];
+  for _ in 0..thread_count {
+    // if we for instance have 4 threads, and we got 3 items to scrape
+    // this will be spread out over 3 threads (not ideal), but it will at least
+    // succeed, since the 4th thread won't attempt to pop work items that don't exist
+    if let Some(work) = per_thread_work.pop() {
+      let tx_clone = tx.clone();
+      let t = std::thread::spawn(move || {
+        let work = work;
+        let client = Client::new();
+        // we move work into the thread
+        let mut result = Vec::with_capacity(work.len());
+        for id in work {
+          let url_string = format!("{}/{}", BASE_URL, id);
+          let r = client.get(&url_string).send();
+          if let Ok(resp) = r {
+            let url = resp.url();
+            let g_info_result = InternalGameInfo::from_url(url);
+            match g_info_result {
+              Ok(res) => result.push(Ok(res)),
+              Err(e) => result.push(Err((id, e))),
+            }
+          } else if let Err(e) = r {
+            result.push(Err((id, BuilderError::from(e))));
+          }
+          tx_clone.send(1);
+        }
+        // we want to drop the transmitter/sender, because we want the for loop to end, when all senders are closed
+        drop(tx_clone);
+        result
+      });
+      jobs.push(t);
     }
+  }
+  // we want to drop the transmitter/sender, because we want the for loop to end, when all senders are closed
+  drop(tx);
+
+  for e in rx {
     pb.inc();
   }
-  pb.finish_print(format!("Done scraping game info for {} games.", count).as_ref());
+
+  let mut result = Vec::with_capacity(game_ids.len());
+  for job in jobs {
+    let scraped = job.join();
+    match scraped {
+      Ok(res) => result.extend(res),
+      Err(err) => panic!("Failed to get results from worker thread: {:?}", err),
+    }
+  }
+
+  pb.finish_print(format!("Done scraping game info for {} games.", result.len()).as_ref());
   result
 }
 

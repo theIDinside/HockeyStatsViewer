@@ -62,7 +62,12 @@ fn scrape_and_log(games: &Vec<&InternalGameInfo>) -> (Vec<Game>, Vec<(usize, Bui
   let mut errs = vec![];
 
   let scrape_begin_time = Instant::now();
-  let game_results = scrape::scrape_game_results(&games);
+  let threads: usize = std::thread::available_parallelism()
+    .expect("Failed to get cpus?")
+    .try_into()
+    .expect("Failed to convert");
+  println!("Attempting to use {} threads...", threads);
+  let game_results = scrape::scrape_game_results(threads, &games);
   let count = game_results.len();
   for g in game_results {
     match g {
@@ -75,17 +80,22 @@ fn scrape_and_log(games: &Vec<&InternalGameInfo>) -> (Vec<Game>, Vec<(usize, Bui
   (ok_games, errs)
 }
 
-pub const FULLSEASON: std::ops::Range<usize> = FIRST_GAME..(GAMES_IN_SEASON + 1);
+pub const FULLSEASON: std::ops::Range<usize> = FIRST_GAME..(FIRST_GAME + GAMES_IN_SEASON);
 
 pub fn game_info_scrape_all() {
   // Begin scraping of all game info
-  let full_season_ids: Vec<usize> = (FIRST_GAME..(FIRST_GAME + GAMES_IN_SEASON + 1)).collect();
+  let full_season_ids: Vec<usize> = (FIRST_GAME..(FIRST_GAME + GAMES_IN_SEASON)).collect();
   println!("There is no saved Game Info data. Begin scraping of Game Info DB...");
   // We split the games into 100-game chunks, so if anything goes wrong, we at least write 100 games to disk at a time
   let game_id_chunks: Vec<Vec<usize>> = full_season_ids
     .chunks(100)
     .map(|chunk| chunk.into_iter().map(|v| *v).collect())
     .collect();
+  let threads: usize = std::thread::available_parallelism()
+    .expect("Failed to get cpus?")
+    .try_into()
+    .expect("Failed to convert");
+  println!("Attempting to use {} threads...", threads);
   for (index, game_ids) in game_id_chunks.iter().enumerate() {
     println!(
       "Scraping game info for games {}-{}",
@@ -93,8 +103,8 @@ pub fn game_info_scrape_all() {
       game_ids[game_ids.len() - 1]
     );
     let file_name = format!("gameinfo_partial-{}.db", index);
-    let file_path = Path::new(DB_DIR).join(&file_name);
-    let result = scrape_game_infos(&game_ids);
+    let file_path = Path::new(DB_DIR).join("gi_partials/").join(&file_name);
+    let result = scrape_game_infos(threads, &game_ids);
     let (games, _errors) = process_results(&result);
     let data = serde_json::to_string(&games).unwrap();
     let mut info_file = OpenOptions::new()
@@ -106,10 +116,11 @@ pub fn game_info_scrape_all() {
     match info_file.write_all(data.as_bytes()) {
       Ok(_) => {
         println!(
-          "Successfully wrote {} game infos to file {}. ({} bytes)",
+          "Successfully wrote {} game infos to file {}. ({} bytes). Encountered {} errors",
           games.len(),
           &file_path.display(),
-          data.len()
+          data.len(),
+          _errors.len()
         );
       }
       Err(e) => {
@@ -123,9 +134,9 @@ pub fn game_info_scrape_all() {
   }
 }
 
-pub fn game_info_scrape_missing(db_root_dir: &Path, missing_games: Vec<usize>) -> Vec<InternalGameInfo> {
-  println!("Scraping remaining {} game info items", missing_games.len());
-  let chunks: Vec<Vec<usize>> = missing_games
+pub fn scrape_gameinfos(db_root_dir: &Path, game_ids: Vec<usize>) -> Vec<InternalGameInfo> {
+  println!("Scraping remaining {} game info items", game_ids.len());
+  let chunks: Vec<Vec<usize>> = game_ids
     .chunks(100)
     .map(|chunk| chunk.iter().map(|val| *val).collect())
     .collect();
@@ -135,13 +146,16 @@ pub fn game_info_scrape_missing(db_root_dir: &Path, missing_games: Vec<usize>) -
   let partials_file_count = std::fs::read_dir(&partials_dir)
     .expect("Could not open gi_partials directory")
     .count();
-
+  let threads: usize = std::thread::available_parallelism()
+    .expect("Failed to get cpus?")
+    .try_into()
+    .expect("Failed to convert");
   for (index, game_ids) in chunks.iter().enumerate() {
     let file_name = format!("gameinfo_partial-{}.db", index + partials_file_count);
     let file_path = &partials_dir.join(&file_name);
-    let result = scrape_game_infos(&game_ids);
+    let result = scrape_game_infos(threads, &game_ids);
     let (games, _errors) = process_results(&result);
-    let data = serde_json::to_string(&game_ids).unwrap();
+    let data = serde_json::to_string(&games).unwrap();
     let mut info_file = OpenOptions::new()
       .read(true)
       .write(true)
@@ -157,7 +171,13 @@ pub fn game_info_scrape_missing(db_root_dir: &Path, missing_games: Vec<usize>) -
           data.len()
         );
       }
-      Err(_e) => {}
+      Err(e) => {
+        println!(
+          "Failed to write serialized data to {}. Error: {}",
+          &file_path.display(),
+          e
+        );
+      }
     }
     scraped_missing.push(games.into_iter().map(|x| x.clone()).collect::<Vec<InternalGameInfo>>());
   }
@@ -219,12 +239,12 @@ fn main() {
       handle_serde_json_error(serde_err);
     }
     GameInfoScraped::Partial(partial_data, Some(missing_games)) => {
-      let missing_scraped = game_info_scrape_missing(db_root_dir, missing_games);
+      let missing_scraped = scrape_gameinfos(db_root_dir, missing_games);
       let total: Vec<&InternalGameInfo> = partial_data.iter().chain(missing_scraped.iter()).collect();
       let de_duplicated: HashMap<usize, &InternalGameInfo> = total.iter().map(|val| (val.get_id(), *val)).collect();
 
       assert_eq!(de_duplicated.len(), total.len());
-      if total.len() == 1271 {
+      if total.len() == GAMES_IN_SEASON {
         let data = serde_json::to_string(&total).expect("Could not de-serialize fully compiled Game Info db to file");
         match game_info_file.write_all(data.as_bytes()) {
           Ok(_) => println!("Successfully wrote serialized data of fully compiled Game Info db"),
@@ -277,55 +297,5 @@ fn main() {
         Err(err) => println!("Serialization failed: {}", err),
       }
     }
-  }
-}
-
-#[cfg(test)]
-mod tests {
-  use crate::scrape::{process_results, scrape_game_infos};
-  use std::fs::OpenOptions;
-  use std::io::Write;
-  use std::path::Path;
-
-  #[test]
-  fn scrape_and_serialize_5_games() {
-    let r = (2019020001..(2019020001 + 5)).collect();
-    let p = Path::new("./tests/scrape_and_serialize_5_games.db");
-    let mut f = OpenOptions::new()
-      .write(true)
-      .create(true)
-      .open(p)
-      .expect("Couldn't create file ./tests/scrape_and_serialize_5_games.db");
-    let results = scrape_game_infos(&r);
-    let (games, _errors) = process_results(&results);
-    let data = serde_json::to_string(&games).unwrap();
-    match f.write_all(data.as_bytes()) {
-      Ok(_) => println!("Successfully wrote serialized data to file"),
-      Err(e) => panic!("Failed to write serialized data to file: {}", e),
-    }
-  }
-
-  #[test]
-  fn deserialize_game() {
-    let _data = r#"{"game_info":{"home":"TOR","away":"OTT","gid":2019020001,"date":{"year":2019,"month":10,"day":2}},
-            "goals":
-                [{"goal_number":1,"player":"7 B.TKACHUK(1)","team":"OTT","period":{"number":1,"time":{"minutes":0,"seconds":25}},"strength":"Even"},
-                {"goal_number":2,"player":"33 F.GAUTHIER(1)","team":"TOR","period":{"number":2,"time":{"minutes":2,"seconds":20}},"strength":"Even"},
-                {"goal_number":3,"player":"42 T.MOORE(1)","team":"TOR","period":{"number":2,"time":{"minutes":4,"seconds":42}},"strength":"Even"},
-                {"goal_number":4,"player":"49 S.SABOURIN(1)","team":"OTT","period":{"number":2,"time":{"minutes":5,"seconds":51}},"strength":"Even"},
-                {"goal_number":5,"player":"34 A.MATTHEWS(1)","team":"TOR","period":{"number":2,"time":{"minutes":8,"seconds":2}},"strength":"Even"},
-                {"goal_number":6,"player":"34 A.MATTHEWS(2)","team":"TOR","period":{"number":2,"time":{"minutes":14,"seconds":50}},"strength":"PowerPlay"},
-                {"goal_number":7,"player":"65 I.MIKHEYEV(1)","team":"TOR","period":{"number":3,"time":{"minutes":9,"seconds":43}},"strength":"Even"},
-                {"goal_number":8,"player":"9 B.RYAN(1)","team":"OTT","period":{"number":3,"time":{"minutes":17,"seconds":45}},"strength":"Even"}],
-                "winning_team":"TOR",
-                "final_score":{"away":3,"home":5},
-                "shots":[ {"away":12,"home":14},
-                        {"away":3,"home":17},
-                        {"away":11,"home":11}],
-                "power_plays":{"away":{"goals":0,"total":3},
-                                "home":{"goals":1,"total":5}},
-                "take_aways":{"away":7,"home":13},
-                "give_aways":{"away":8,"home":12},
-                "face_offs":{"away":58.0,"home":42.0}}"#;
   }
 }
