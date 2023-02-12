@@ -85,53 +85,7 @@ pub const FULLSEASON: std::ops::Range<usize> = FIRST_GAME..(FIRST_GAME + GAMES_I
 pub fn game_info_scrape_all() {
   // Begin scraping of all game info
   let full_season_ids: Vec<usize> = (FIRST_GAME..(FIRST_GAME + GAMES_IN_SEASON)).collect();
-  println!("There is no saved Game Info data. Begin scraping of Game Info DB...");
-  // We split the games into 100-game chunks, so if anything goes wrong, we at least write 100 games to disk at a time
-  let game_id_chunks: Vec<Vec<usize>> = full_season_ids
-    .chunks(100)
-    .map(|chunk| chunk.into_iter().map(|v| *v).collect())
-    .collect();
-  let threads: usize = std::thread::available_parallelism()
-    .expect("Failed to get cpus?")
-    .try_into()
-    .expect("Failed to convert");
-  println!("Attempting to use {} threads...", threads);
-  for (index, game_ids) in game_id_chunks.iter().enumerate() {
-    println!(
-      "Scraping game info for games {}-{}",
-      game_ids[0],
-      game_ids[game_ids.len() - 1]
-    );
-    let file_name = format!("gameinfo_partial-{}.db", index);
-    let file_path = Path::new(DB_DIR).join("gi_partials/").join(&file_name);
-    let result = scrape_game_infos(threads, &game_ids);
-    let (games, _errors) = process_results(&result);
-    let data = serde_json::to_string(&games).unwrap();
-    let mut info_file = OpenOptions::new()
-      .read(true)
-      .write(true)
-      .create(true)
-      .open(&file_path)
-      .expect(format!("Couldn't open/create file {}", &file_path.display()).as_ref());
-    match info_file.write_all(data.as_bytes()) {
-      Ok(_) => {
-        println!(
-          "Successfully wrote {} game infos to file {}. ({} bytes). Encountered {} errors",
-          games.len(),
-          &file_path.display(),
-          data.len(),
-          _errors.len()
-        );
-      }
-      Err(e) => {
-        println!(
-          "Failed to write serialized data to {}. Error: {}",
-          &file_path.display(),
-          e
-        )
-      }
-    }
-  }
+  scrape_gameinfos(&Path::new(DB_DIR), full_season_ids);
 }
 
 pub fn scrape_gameinfos(db_root_dir: &Path, game_ids: Vec<usize>) -> Vec<InternalGameInfo> {
@@ -150,6 +104,7 @@ pub fn scrape_gameinfos(db_root_dir: &Path, game_ids: Vec<usize>) -> Vec<Interna
     .expect("Failed to get cpus?")
     .try_into()
     .expect("Failed to convert");
+  println!("Attempting to use {} threads...", threads);
   for (index, game_ids) in chunks.iter().enumerate() {
     let file_name = format!("gameinfo_partial-{}.db", index + partials_file_count);
     let file_path = &partials_dir.join(&file_name);

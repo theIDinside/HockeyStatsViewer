@@ -80,9 +80,9 @@ impl ScrapedSeason {
         games: vec![],
         file: file.to_path_buf(),
       }),
-      Ok(bytes) => {
+      Ok(_bytes) => {
         #[cfg(debug_assertions)]
-        println!("Read {} bytes", bytes);
+        println!("Read {} bytes", _bytes);
         let data: Vec<IntermediateGame> =
           serde_json::from_str(&buf).expect("Couldn't de-serialize data for Game results");
         #[cfg(debug_assertions)]

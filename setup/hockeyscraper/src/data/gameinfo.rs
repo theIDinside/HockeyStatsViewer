@@ -17,7 +17,7 @@ pub struct InternalGameInfo {
 
 impl InternalGameInfo {
   pub fn from_url(url: &Url) -> Result<InternalGameInfo, BuilderError> {
-    let url_string = url.clone().into_string();
+    let url_string = url.clone().to_string();
     // url = "https://www.nhl.com/gamecenter/ari-vs-van/2020/01/16/2019020739#game=2019020739,game_state=final"
     let (_, data) = url_string.split_at(_BASE.len());
     // data = "ari-vs-van/2020/01/16/2019020739#game=2019020739,game_state=final"

@@ -338,14 +338,12 @@ fn scrape_game(client: &reqwest::blocking::Client, game_info: &InternalGameInfo)
     Ok(game)
   } else {
     Err(gb.get_error())
-    // Err(BuilderError::GameIncomplete(game_info.get_id(), vec!["Some field not parsed / added".to_owned()]))
   }
 }
 
 pub fn scrape_game_results(thread_count: usize, games: &Vec<&InternalGameInfo>) -> Vec<ScrapeResults<Game>> {
   println!("Running game scraping...");
   use pbr::ProgressBar;
-  // returns a vector of tuple of two links, one to the game summary and one to the event summary
 
   let per_thread_work_count = (games.len() as f32 / thread_count as f32).ceil() as usize;
   let mut per_thread_work: Vec<Vec<InternalGameInfo>> = games
@@ -377,7 +375,7 @@ pub fn scrape_game_results(thread_count: usize, games: &Vec<&InternalGameInfo>) 
               result.push(Err((game_info.get_id(), e)));
             }
           }
-          tx_clone.send(1);
+          let _ = tx_clone.send(1);
         }
         drop(tx_clone);
         result
@@ -389,8 +387,8 @@ pub fn scrape_game_results(thread_count: usize, games: &Vec<&InternalGameInfo>) 
   let mut result = Vec::new();
   let mut pb = ProgressBar::new(games.len() as u64);
   pb.format("╢▌▌░╟");
-  for _ in rx {
-    pb.inc();
+  for e in rx {
+    pb.add(e);
   }
 
   for job in jobs {
@@ -441,7 +439,7 @@ pub fn scrape_game_infos(thread_count: usize, game_ids: &Vec<usize>) -> Vec<Scra
           } else if let Err(e) = r {
             result.push(Err((id, BuilderError::from(e))));
           }
-          tx_clone.send(1);
+          let _ = tx_clone.send(1);
         }
         // we want to drop the transmitter/sender, because we want the for loop to end, when all senders are closed
         drop(tx_clone);
@@ -454,7 +452,7 @@ pub fn scrape_game_infos(thread_count: usize, game_ids: &Vec<usize>) -> Vec<Scra
   drop(tx);
 
   for e in rx {
-    pb.inc();
+    pb.add(e);
   }
 
   let mut result = Vec::with_capacity(game_ids.len());
