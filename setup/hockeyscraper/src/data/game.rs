@@ -2,8 +2,6 @@ use super::gameinfo::InternalGameInfo;
 use super::stats::{DeserializeGoal, FaceOffs, GiveAways, Goal, PowerPlays, Score, Shots, TakeAways};
 use crate::data::stats::PowerPlay;
 use crate::scrape::errors::BuilderError;
-use std::io::{Read, Write};
-use std::path::Path;
 /// S.E = self explanatory
 
 /// This is a real fine hack by me. I haven't set out to learn how to implement a custom Deserialize (yet), so for now I deserialize to this,
@@ -14,7 +12,7 @@ use std::path::Path;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct IntermediateGame {
   /// Holds game ID, home team ID, away team ID and CalendarDate for when it was played
-  game_info: InternalGameInfo,
+  pub game_info: InternalGameInfo,
   /// Scoring progression
   goals: Vec<DeserializeGoal>,
   /// Winning team's ID
@@ -61,68 +59,6 @@ impl Game {
   }
 }
 
-pub struct ScrapedSeason {
-  pub games: Vec<Game>,
-  file: std::path::PathBuf,
-}
-
-impl ScrapedSeason {
-  pub fn new(file: &Path) -> Result<ScrapedSeason, std::io::Error> {
-    let mut game_results = std::fs::OpenOptions::new()
-      .read(true)
-      .write(true)
-      .create(true)
-      .open(file)
-      .expect(format!("Couldn't open/create file {}", file.display()).as_ref());
-    let mut buf = String::new();
-    match game_results.read_to_string(&mut buf) {
-      Ok(bytes) if bytes < 2 => Ok(ScrapedSeason {
-        games: vec![],
-        file: file.to_path_buf(),
-      }),
-      Ok(_bytes) => {
-        #[cfg(debug_assertions)]
-        println!("Read {} bytes", _bytes);
-        let data: Vec<IntermediateGame> =
-          serde_json::from_str(&buf).expect("Couldn't de-serialize data for Game results");
-        #[cfg(debug_assertions)]
-        println!("Deserialized {} games", data.len());
-        let games: Vec<Game> = data.into_iter().map(|im_game| Game::from(im_game)).collect();
-        Ok(ScrapedSeason {
-          games,
-          file: file.to_path_buf(),
-        })
-      }
-      Err(e) => Err(e),
-    }
-  }
-
-  pub fn add_games(&mut self, games: Vec<Game>) {
-    self.games.extend(games);
-  }
-
-  pub fn serialize(&mut self) -> Result<(), std::io::Error> {
-    let mut game_results = std::fs::OpenOptions::new()
-      .read(true)
-      .write(true)
-      .create(true)
-      .truncate(true)
-      .open(&self.file)
-      .expect(format!("Couldn't open/create file {}", &self.file.display()).as_ref());
-    let data = serde_json::to_string(&self.games).expect("Couldn't serialize game results data");
-    match game_results.write_all(data.as_bytes()) {
-      Ok(_) => {
-        println!("Successfully wrote serialized data to file");
-        Ok(())
-      }
-      Err(e) => {
-        println!("Could not write serialized data to file");
-        Err(e)
-      }
-    }
-  }
-}
-
 impl From<IntermediateGame> for Game {
   fn from(g: IntermediateGame) -> Game {
     Game {
@@ -136,23 +72,6 @@ impl From<IntermediateGame> for Game {
       give_aways: g.give_aways,
       face_offs: g.face_offs,
     }
-  }
-}
-
-#[allow(dead_code)]
-impl Game {
-  /// This struct can be optimized. But there's really no point, as it *will* be serialized and not
-  /// used in the front-end which is entirely written in C++
-  pub fn size_of(&self) -> usize {
-    std::mem::size_of::<InternalGameInfo>()
-      + self.goals.len() * std::mem::size_of::<Goal>()
-      + self.winning_team.len() * std::mem::size_of::<char>()
-      + std::mem::size_of::<Score>()
-      + self.shots.len() * std::mem::size_of::<Shots>()
-      + std::mem::size_of::<PowerPlay>() * 2
-      + std::mem::size_of::<TakeAways>()
-      + std::mem::size_of::<GiveAways>()
-      + std::mem::size_of::<FaceOffs>()
   }
 }
 

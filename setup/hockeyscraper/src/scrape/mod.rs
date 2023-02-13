@@ -1,9 +1,16 @@
 pub mod errors;
-use crate::data::game::{Game, GameBuilder, TeamValue};
+
+use std::collections::HashMap;
+use std::io::{Read, Write};
+use std::path::Path;
+
+use crate::data::game::{Game, GameBuilder, IntermediateGame, TeamValue};
 use crate::data::gameinfo::InternalGameInfo;
 use crate::data::stats::{GoalBuilder, GoalStrength, Period, PowerPlay, Shots, Time};
 use crate::data::team::get_id;
-use crate::BASE_URL;
+use crate::processing::{check_missing, verify_deserialized_content};
+use crate::{scrape_and_log, scrape_gameinfos, BASE_URL, GAMES_IN_SEASON};
+use chrono::Datelike;
 use reqwest::blocking::Client;
 
 use crate::scrape::errors::BuilderError;
@@ -14,6 +21,242 @@ pub type GameResult = Result<Game, BuilderError>;
 
 pub const _BASE: &'static str = "https://www.nhl.com/gamecenter/";
 pub const _VS: &'static str = "-vs-";
+
+pub struct GameInfoScraper<'a> {
+  game_info_file: std::fs::File,
+  db_path: &'a Path,
+}
+
+pub struct GameResultScraper<'a> {
+  game_infos: Vec<InternalGameInfo>,
+  db_path: &'a Path,
+}
+
+pub struct GameResults<'a> {
+  games: Vec<Game>,
+  scraped_games: usize,
+  serialized_games: usize,
+  db_path: &'a Path,
+}
+
+impl<'a> GameResults<'a> {
+  pub fn serialize(&self) {
+    let mut game_results = std::fs::OpenOptions::new()
+      .read(true)
+      .write(true)
+      .create(true)
+      .open(self.db_path.join("gameresults.db"))
+      .expect(
+        format!(
+          "Couldn't open/create file {}",
+          self.db_path.join("gameinfo.db").display()
+        )
+        .as_ref(),
+      );
+    let data = serde_json::to_string(&self.games).expect("Couldn't serialize game results data");
+    match game_results.write_all(data.as_bytes()) {
+      Ok(_) => {
+        println!("Successfully wrote serialized data to file");
+      }
+      Err(e) => {
+        panic!("Could not write serialized data to file: {}", e);
+      }
+    }
+  }
+}
+
+impl<'a> std::fmt::Display for GameResults<'a> {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(
+      f,
+      "Scraped games: {}. Serialized games: {}",
+      self.scraped_games, self.serialized_games
+    )
+  }
+}
+
+impl<'a> GameInfoScraper<'a> {
+  pub fn new(db_path: &'a Path) -> GameInfoScraper {
+    let game_info_file = std::fs::OpenOptions::new()
+      .read(true)
+      .write(true)
+      .create(true)
+      .open(&Path::new(db_path).join("gameinfo.db"))
+      .expect(
+        format!(
+          "Couldn't open/create file {}",
+          &Path::new(db_path).join("gameinfo.db").display()
+        )
+        .as_ref(),
+      );
+
+    GameInfoScraper {
+      game_info_file,
+      db_path,
+    }
+  }
+
+  fn check_game_info_db_contents(&mut self) -> Option<Vec<InternalGameInfo>> {
+    let mut game_info_buf = String::with_capacity(120000);
+    self
+      .game_info_file
+      .read_to_string(&mut game_info_buf)
+      .ok()
+      .and_then(|bytes| {
+        println!("read {} bytes from game info db", bytes);
+        serde_json::from_str(&game_info_buf)
+          .ok()
+          .and_then(|gameinfos| {
+            if verify_deserialized_content(&gameinfos) {
+              Some(gameinfos)
+            } else {
+              None
+            }
+          })
+      })
+  }
+
+  pub fn scrape_game_infos(mut self) -> GameResultScraper<'a> {
+    if let Some(game_infos) = self.check_game_info_db_contents() {
+      GameResultScraper {
+        game_infos,
+        db_path: self.db_path,
+      }
+    } else {
+      let partials_dir = self.db_path.join("gi_partials");
+      if !partials_dir.exists() {
+        match std::fs::create_dir(&partials_dir) {
+          Ok(()) => println!("partials dir created..."),
+          Err(err) => match err.kind() {
+            std::io::ErrorKind::AlreadyExists => println!("partials dir exists - continuing"),
+            _ => panic!("Failed to create partials dir {}", err),
+          },
+        };
+      }
+      let mut all_partials = Vec::new();
+      let dir_iterator = std::fs::read_dir(&partials_dir)
+        .expect(format!("Couldn't read directory {} or it's contents", partials_dir.display()).as_ref());
+
+      for entry in dir_iterator {
+        let file_entry = entry.expect("Couldn't unwrap iterator for file");
+        let mut buf = String::new();
+        let mut f_handle = std::fs::OpenOptions::new()
+          .read(true)
+          .write(false)
+          .create(false)
+          .open(file_entry.path())
+          .expect(format!("Couldn't open file {} for processing", file_entry.path().display()).as_ref());
+        let bytes_read = f_handle.read_to_string(&mut buf).expect(
+          format!(
+            "Couldn't read file contents of {} to char buffer for processing",
+            file_entry.path().display()
+          )
+          .as_ref(),
+        );
+        if bytes_read <= 2 { // means we have EOF or just empty [] json array or empty json object {}
+           // skip this file
+        } else {
+          let partials: Vec<InternalGameInfo> = serde_json::from_str(&buf).expect(
+            format!(
+              "Couldn't de-serialize contents from file {}",
+              file_entry.path().display()
+            )
+            .as_ref(),
+          );
+          all_partials.extend(partials);
+        }
+      }
+      let game_infos = if let Some(missing) = check_missing(&all_partials) {
+        let missing_scraped = scrape_gameinfos(self.db_path, missing);
+        all_partials.extend(missing_scraped.into_iter());
+        all_partials.sort_by(|a, b| a.get_id().cmp(&b.get_id()));
+        let de_duplicated: HashMap<usize, &InternalGameInfo> =
+          all_partials.iter().map(|val| (val.get_id(), val)).collect();
+        assert_eq!(de_duplicated.len(), all_partials.len());
+        all_partials
+      } else {
+        all_partials
+      };
+      assert_eq!(game_infos.len(), GAMES_IN_SEASON);
+      let data =
+        serde_json::to_string(&game_infos).expect("Could not de-serialize fully compiled Game Info db to file");
+
+      match self.game_info_file.write_all(data.as_bytes()) {
+        Ok(_) => println!("Successfully wrote serialized data of fully compiled Game Info db"),
+        Err(e) => panic!("Failed to write game info: {}", e),
+      }
+      match std::fs::remove_dir_all(&partials_dir) {
+        Ok(_) => println!("Cleaned up partials directory..."),
+        Err(_) => println!("Could not clean up partials directory..."),
+      }
+      GameResultScraper {
+        game_infos,
+        db_path: self.db_path,
+      }
+    }
+  }
+}
+
+impl<'a> GameResultScraper<'a> {
+  pub fn scrape_games(self) -> GameResults<'a> {
+    let mut game_results = std::fs::OpenOptions::new()
+      .read(true)
+      .write(true)
+      .create(true)
+      .open(&self.db_path.join("gameinfo.db"))
+      .expect(
+        format!(
+          "Couldn't open/create file {}",
+          &self.db_path.join("gameinfo.db").display()
+        )
+        .as_ref(),
+      );
+    let mut buf = String::new();
+    let mut scraped_games: Vec<Game> = game_results
+      .read_to_string(&mut buf)
+      .ok()
+      .and_then(|bytes| {
+        println!("read {} bytes from game results db", bytes);
+        serde_json::from_str::<Vec<IntermediateGame>>(&buf).ok()
+      })
+      .map(|games| games.into_iter().map(|g| Game::from(g)).collect())
+      .unwrap_or(vec![]);
+
+    println!("All game infos are scraped & serialized to 1 file. Begin scraping of results...");
+    let today = chrono::Utc::now();
+    let date_tuple = (today.day(), today.month(), today.year() as u32);
+
+    let refs = self
+      .game_infos
+      .iter()
+      .filter(|g| {
+        g.is_played(date_tuple)
+          && scraped_games
+            .iter()
+            .find(|game| game.id() == g.get_id())
+            .is_none()
+      })
+      .map(|x| x)
+      .collect();
+    let (game_results, errors) = scrape_and_log(&refs);
+    let serialized_games = scraped_games.len();
+    let scraped_games_count = game_results.len();
+    scraped_games.extend(game_results);
+    if !errors.is_empty() {
+      println!("Error trying to scrape {} games", errors.len());
+      for (id, err) in errors {
+        println!("Game {} could not be scraped: {:?}", id, err);
+      }
+    }
+
+    GameResults {
+      games: scraped_games,
+      scraped_games: scraped_games_count,
+      serialized_games: serialized_games,
+      db_path: self.db_path,
+    }
+  }
+}
 
 pub fn convert_fwd_slashes(ch: char) -> char {
   if ch == '/' {
@@ -105,131 +348,152 @@ fn scrape_game(client: &reqwest::blocking::Client, game_info: &InternalGameInfo)
     .collect();
 
   for (index, node) in nodes.iter().enumerate() {
-    node.find(Name("td")).enumerate().skip(1).for_each(|(i, stat)| {
-      match i {
-        // 1 if index == 0 => gb.final_score(TeamValue::Away(stat.text().parse::<usize>().expect("Couldn't parse away score"))),
-        // 1 if index == 1 => gb.final_score(TeamValue::Home(stat.text().parse::<usize>().expect("Couldn't parse away score"))),
-        5 => {}  // PN (Number of Penalties)
-        6 => {}  // PIM (Penalty Infraction Minutes)
-        13 => {} // Shots
-        17 if index == 0 => gb.give_aways(TeamValue::Away(
-          stat
-            .text()
-            .parse::<usize>()
-            .expect("Could not parse give aways for away team"),
-        )), // GV Give aways
-        17 if index == 1 => gb.give_aways(TeamValue::Home(
-          stat
-            .text()
-            .parse::<usize>()
-            .expect("Could not parse give aways for home team"),
-        )),
-        18 if index == 0 => gb.take_aways(TeamValue::Away(
-          stat
-            .text()
-            .parse::<usize>()
-            .expect("Could not parse give aways for away team"),
-        )),
-        18 if index == 1 => gb.take_aways(TeamValue::Home(
-          stat
-            .text()
-            .parse::<usize>()
-            .expect("Could not parse give aways for home team"),
-        )),
-        22 if index == 0 => gb.face_offs(TeamValue::Away(
-          stat
-            .text()
-            .parse::<f32>()
-            .expect("Couldn't parse face off value for away team"),
-        )), // Faceoff win %
-        22 if index == 1 => gb.face_offs(TeamValue::Home(
-          stat
-            .text()
-            .parse::<f32>()
-            .expect("Couldn't parse face off value for home team"),
-        )),
-        // F% Faceoff win percentage
-        _ => {}
-      }
-    })
+    node
+      .find(Name("td"))
+      .enumerate()
+      .skip(1)
+      .for_each(|(i, stat)| {
+        match i {
+          // 1 if index == 0 => gb.final_score(TeamValue::Away(stat.text().parse::<usize>().expect("Couldn't parse away score"))),
+          // 1 if index == 1 => gb.final_score(TeamValue::Home(stat.text().parse::<usize>().expect("Couldn't parse away score"))),
+          5 => {}  // PN (Number of Penalties)
+          6 => {}  // PIM (Penalty Infraction Minutes)
+          13 => {} // Shots
+          17 if index == 0 => gb.give_aways(TeamValue::Away(
+            stat
+              .text()
+              .parse::<usize>()
+              .expect("Could not parse give aways for away team"),
+          )), // GV Give aways
+          17 if index == 1 => gb.give_aways(TeamValue::Home(
+            stat
+              .text()
+              .parse::<usize>()
+              .expect("Could not parse give aways for home team"),
+          )),
+          18 if index == 0 => gb.take_aways(TeamValue::Away(
+            stat
+              .text()
+              .parse::<usize>()
+              .expect("Could not parse give aways for away team"),
+          )),
+          18 if index == 1 => gb.take_aways(TeamValue::Home(
+            stat
+              .text()
+              .parse::<usize>()
+              .expect("Could not parse give aways for home team"),
+          )),
+          22 if index == 0 => gb.face_offs(TeamValue::Away(
+            stat
+              .text()
+              .parse::<f32>()
+              .expect("Couldn't parse face off value for away team"),
+          )), // Faceoff win %
+          22 if index == 1 => gb.face_offs(TeamValue::Home(
+            stat
+              .text()
+              .parse::<f32>()
+              .expect("Couldn't parse face off value for home team"),
+          )),
+          // F% Faceoff win percentage
+          _ => {}
+        }
+      })
   }
-  game_doc.find(gs_table_predicate).enumerate().for_each(|(i, node)| {
-    match i {
-      /* Goal summary table */
-      9 => {
-        node.find(Name("tr")).enumerate().for_each(|(idx, tr_node)| {
-          let mut goal_builder = GoalBuilder::new();
-          if idx > 0 {
-            let mut period = String::new();
+  game_doc
+    .find(gs_table_predicate)
+    .enumerate()
+    .for_each(|(i, node)| {
+      match i {
+        /* Goal summary table */
+        9 => {
+          node
+            .find(Name("tr"))
+            .enumerate()
+            .for_each(|(idx, tr_node)| {
+              let mut goal_builder = GoalBuilder::new();
+              if idx > 0 {
+                let mut period = String::new();
 
-            tr_node.find(Name("td")).enumerate().for_each(|(td_index, goal_node)| {
-              let nodestr = goal_node.text().trim().to_owned();
-              match td_index {
-                0 => {
-                  if nodestr != "-" {
-                    goal_builder.goal_number(nodestr.parse::<usize>().expect("Could not parse goal number"))
+                tr_node
+                  .find(Name("td"))
+                  .enumerate()
+                  .for_each(|(td_index, goal_node)| {
+                    let nodestr = goal_node.text().trim().to_owned();
+                    match td_index {
+                      0 => {
+                        if nodestr != "-" {
+                          goal_builder.goal_number(
+                            nodestr
+                              .parse::<usize>()
+                              .expect("Could not parse goal number"),
+                          )
+                        } else {
+                          // Means we have an unsuccessful penalty shot. Set number => 0 and handle later
+                          goal_builder.goal_number(0);
+                        }
+                      }
+                      1 => {
+                        period = nodestr;
+                      }
+                      2 => {
+                        if period == "SO" {
+                          let p = Period::new(&period, None).expect("Could not parse period");
+                          goal_builder.period(p);
+                        } else {
+                          let time_components: Vec<&str> = nodestr.split(":").collect();
+                          let (min, sec) = (
+                            time_components[0]
+                              .parse::<u16>()
+                              .expect(format!("Could not parse minutes: {}", nodestr).as_ref()),
+                            time_components[1]
+                              .parse::<u16>()
+                              .expect("Could not parse seconds"),
+                          );
+                          let time = Time::new(min, sec);
+                          let p = Period::new(&period, Some(time)).expect("Could not parse period");
+                          goal_builder.period(p)
+                        }
+                      }
+                      3 => {
+                        if !goal_builder.is_shootout() {
+                          let strength = GoalStrength::try_from(&nodestr)
+                            .ok()
+                            .expect("Could not parse strength");
+                          goal_builder.strength(strength);
+                        } else {
+                          goal_builder.strength(GoalStrength::Shootout);
+                        }
+                      }
+                      4 => {
+                        let team_id = get_id(&nodestr)
+                          .expect(format!("Could not find a team with that name: {}", &nodestr).as_ref());
+                        goal_builder.team(team_id);
+                      }
+                      5 => {
+                        goal_builder.player(nodestr);
+                      }
+                      _ => {}
+                    }
+                  });
+                if let Some(goal) = goal_builder.finalize() {
+                  gb.add_goal(goal);
+                } else {
+                  /*
+                  if goal_builder.is_unsuccessful_ps() {
+                      println!("'Goal' stat was recorded for an unsuccessful penalty shot. Discarding data.");
                   } else {
-                    // Means we have an unsuccessful penalty shot. Set number => 0 and handle later
-                    goal_builder.goal_number(0);
+                      println!("Error in goal builder. Data: {:?}", &goal_builder);
+                      panic!("Could not add goal stat");
                   }
+                  */
                 }
-                1 => {
-                  period = nodestr;
-                }
-                2 => {
-                  if period == "SO" {
-                    let p = Period::new(&period, None).expect("Could not parse period");
-                    goal_builder.period(p);
-                  } else {
-                    let time_components: Vec<&str> = nodestr.split(":").collect();
-                    let (min, sec) = (
-                      time_components[0]
-                        .parse::<u16>()
-                        .expect(format!("Could not parse minutes: {}", nodestr).as_ref()),
-                      time_components[1].parse::<u16>().expect("Could not parse seconds"),
-                    );
-                    let time = Time::new(min, sec);
-                    let p = Period::new(&period, Some(time)).expect("Could not parse period");
-                    goal_builder.period(p)
-                  }
-                }
-                3 => {
-                  if !goal_builder.is_shootout() {
-                    let strength = GoalStrength::try_from(&nodestr).ok().expect("Could not parse strength");
-                    goal_builder.strength(strength);
-                  } else {
-                    goal_builder.strength(GoalStrength::Shootout);
-                  }
-                }
-                4 => {
-                  let team_id =
-                    get_id(&nodestr).expect(format!("Could not find a team with that name: {}", &nodestr).as_ref());
-                  goal_builder.team(team_id);
-                }
-                5 => {
-                  goal_builder.player(nodestr);
-                }
-                _ => {}
               }
             });
-            if let Some(goal) = goal_builder.finalize() {
-              gb.add_goal(goal);
-            } else {
-              /*
-              if goal_builder.is_unsuccessful_ps() {
-                  println!("'Goal' stat was recorded for an unsuccessful penalty shot. Discarding data.");
-              } else {
-                  println!("Error in goal builder. Data: {:?}", &goal_builder);
-                  panic!("Could not add goal stat");
-              }
-              */
-            }
-          }
-        });
+        }
+        _ => {}
       }
-      _ => {}
-    }
-  });
+    });
   gb.set_final_score();
   let mut penalty_summary = vec![String::from("TOT (PN-PIM)")];
   game_doc.find(Attr("id", "PenaltySummary")).for_each(|v| {

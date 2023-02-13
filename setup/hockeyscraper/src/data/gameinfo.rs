@@ -9,10 +9,10 @@ use reqwest::Url;
 /// stack allocated, or behind 1 heap allocation (in a vector)
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct InternalGameInfo {
-  home: String,
-  away: String,
-  gid: usize,
-  date: CalendarDate,
+  pub home: String,
+  pub away: String,
+  pub gid: usize,
+  pub date: CalendarDate,
 }
 
 impl InternalGameInfo {
@@ -35,7 +35,11 @@ impl InternalGameInfo {
         let teams: Vec<&str> = teams_str.split("-vs-").collect();
         let away_team = teams[0].to_string().to_uppercase();
         let home_team = teams[1].to_string().to_uppercase();
-        let date_string = date.chars().into_iter().map(convert_fwd_slashes).collect::<String>();
+        let date_string = date
+          .chars()
+          .into_iter()
+          .map(convert_fwd_slashes)
+          .collect::<String>();
         let date_fields: Vec<u32> = date_string
           .split("-")
           .into_iter()

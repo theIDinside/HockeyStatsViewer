@@ -4,7 +4,6 @@ use reqwest::Error;
 pub type Message = &'static str;
 pub type HTMLNodeText = String;
 pub type FieldName = String;
-#[allow(dead_code)]
 #[derive(Debug)]
 pub enum BuilderError {
   REQWEST(reqwest::Error),
