@@ -2,6 +2,12 @@ use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::Path;
 
+pub const TEAMS_COUNT: usize = 32;
+
+pub const fn teams_id_range() -> std::ops::Range<u8> {
+  1..(TEAMS_COUNT as u8) + 1
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Team {
   id: usize,
@@ -10,7 +16,7 @@ pub struct Team {
 }
 
 pub fn construct_league() -> Vec<Team> {
-  let teams = (1u8..32)
+  let teams = teams_id_range()
     .map(|value| {
       let id = value as usize;
       let name = get_team_name(value as usize)
@@ -33,7 +39,7 @@ pub fn construct_league() -> Vec<Team> {
 }
 
 pub fn write_league_to_file(teams: Vec<Team>, file_path: &Path) -> Result<usize, std::io::Error> {
-  assert_eq!(teams.len(), 31);
+  assert_eq!(teams.len(), TEAMS_COUNT);
   let mut file = OpenOptions::new()
     .truncate(true)
     .write(true)
