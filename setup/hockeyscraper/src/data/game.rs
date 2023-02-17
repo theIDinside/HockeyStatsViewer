@@ -15,8 +15,6 @@ pub struct IntermediateGame {
   pub game_info: InternalGameInfo,
   /// Scoring progression
   goals: Vec<DeserializeGoal>,
-  /// Winning team's ID
-  winning_team: String,
   /// S.E.
   final_score: Score,
   /// Shots by period
@@ -37,8 +35,6 @@ pub struct Game {
   game_info: InternalGameInfo,
   /// Scoring progression
   goals: Vec<Goal>,
-  /// Winning team's ID
-  winning_team: String,
   /// S.E.
   final_score: Score,
   /// Shots by period
@@ -64,7 +60,6 @@ impl From<IntermediateGame> for Game {
     Game {
       game_info: g.game_info,
       goals: g.goals.into_iter().map(|g| Goal::from(g)).collect(),
-      winning_team: g.winning_team,
       final_score: g.final_score,
       shots: g.shots,
       power_plays: g.power_plays,
@@ -236,14 +231,6 @@ impl GameBuilder {
   }
 
   pub fn finalize(&self) -> Option<Game> {
-    let fscore = self.final_score.as_final_score().unwrap().clone();
-
-    let winning_team = if fscore.home > fscore.away {
-      self.game_info.as_ref().unwrap().get_home_team().clone()
-    } else {
-      self.game_info.as_ref().unwrap().get_away_team().clone()
-    };
-
     if let (
       Some(game_info),
       Some(goals),
@@ -266,7 +253,6 @@ impl GameBuilder {
       Some(Game {
         game_info: game_info.clone(),
         goals: goals.clone(),
-        winning_team,
         final_score,
         shots: shots.clone(),
         power_plays,
