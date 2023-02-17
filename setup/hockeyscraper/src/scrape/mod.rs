@@ -204,11 +204,11 @@ impl<'a> GameResultScraper<'a> {
       .read(true)
       .write(true)
       .create(true)
-      .open(&self.db_path.join("gameinfo.db"))
+      .open(&self.db_path.join("gameresults.db"))
       .expect(
         format!(
           "Couldn't open/create file {}",
-          &self.db_path.join("gameinfo.db").display()
+          &self.db_path.join("gameresults.db").display()
         )
         .as_ref(),
       );
@@ -243,6 +243,7 @@ impl<'a> GameResultScraper<'a> {
     let serialized_games = scraped_games.len();
     let scraped_games_count = game_results.len();
     scraped_games.extend(game_results);
+    scraped_games.sort_by(|a, b| a.id().cmp(&b.id()));
     if !errors.is_empty() {
       println!("Error trying to scrape {} games", errors.len());
       for (id, err) in errors {
