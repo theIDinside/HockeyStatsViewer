@@ -45,6 +45,7 @@ impl<'a> GameResults<'a> {
       .read(true)
       .write(true)
       .create(true)
+      .truncate(true) // we don't want to append. we want to clear and re-write + add
       .open(self.db_path.join("gameresults.db"))
       .expect(
         format!(
