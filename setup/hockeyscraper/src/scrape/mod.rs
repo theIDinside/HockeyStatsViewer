@@ -423,18 +423,6 @@ fn scrape_game(client: &reqwest::blocking::Client, game_info: &InternalGameInfo)
                   .for_each(|(td_index, goal_node)| {
                     let nodestr = goal_node.text().trim().to_owned();
                     match td_index {
-                      0 => {
-                        if nodestr != "-" {
-                          goal_builder.goal_number(
-                            nodestr
-                              .parse::<usize>()
-                              .expect("Could not parse goal number"),
-                          )
-                        } else {
-                          // Means we have an unsuccessful penalty shot. Set number => 0 and handle later
-                          goal_builder.goal_number(0);
-                        }
-                      }
                       1 => {
                         period = nodestr;
                       }

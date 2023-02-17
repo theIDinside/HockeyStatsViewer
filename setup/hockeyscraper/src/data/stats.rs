@@ -1,4 +1,3 @@
-use crate::data::team::get_abbreviated_name;
 use serde::ser::SerializeStruct;
 use serde::{Serialize, Serializer};
 use std::convert::TryFrom;
@@ -134,12 +133,10 @@ pub struct PowerPlays {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Goal {
-  /// The nth goal scored in game (1-indexed)
-  goal_number: usize,
   /// Player name
   player: String,
   /// Scoring team
-  pub team: String,
+  pub team: usize,
   /// Period & time in period
   period: Period,
   /// Team strengths
@@ -148,12 +145,10 @@ pub struct Goal {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DeserializeGoal {
-  /// The nth goal scored in game (1-indexed)
-  goal_number: usize,
   /// Player name
   player: String,
   /// Scoring team
-  pub team: String,
+  pub team: usize,
   period: DeserializePeriod,
   /// Team strengths
   strength: GoalStrength,
@@ -162,7 +157,6 @@ pub struct DeserializeGoal {
 impl From<DeserializeGoal> for Goal {
   fn from(g: DeserializeGoal) -> Goal {
     Goal {
-      goal_number: g.goal_number,
       player: g.player,
       team: g.team,
       period: Period::from(g.period),
@@ -190,15 +184,8 @@ impl From<DeserializePeriod> for Period {
 }
 
 impl Goal {
-  pub fn new_as_opt(
-    goal_number: usize,
-    player: String,
-    team: String,
-    period: Period,
-    strength: GoalStrength,
-  ) -> Option<Goal> {
+  pub fn new_as_opt(player: String, team: usize, period: Period, strength: GoalStrength) -> Option<Goal> {
     Some(Goal {
-      goal_number,
       player,
       team,
       period,
@@ -206,14 +193,13 @@ impl Goal {
     })
   }
 
-  pub fn by_team(&self, team_name: &String) -> bool {
-    &self.team == team_name
+  pub fn by_team(&self, team: usize) -> bool {
+    self.team == team
   }
 }
 
 #[derive(Debug)]
 pub struct GoalBuilder {
-  goal_number: Option<usize>,
   player: Option<String>,
   team: Option<usize>,
   period: Option<Period>,
@@ -223,7 +209,6 @@ pub struct GoalBuilder {
 impl GoalBuilder {
   pub fn new() -> GoalBuilder {
     GoalBuilder {
-      goal_number: None,
       player: None,
       team: None,
       period: None,
@@ -231,9 +216,6 @@ impl GoalBuilder {
     }
   }
 
-  pub fn goal_number(&mut self, number: usize) {
-    self.goal_number = Some(number);
-  }
   pub fn player(&mut self, player: String) {
     self.player = Some(player);
   }
@@ -248,19 +230,10 @@ impl GoalBuilder {
   }
 
   pub fn finalize(&self) -> Option<Goal> {
-    if let (Some(goal_number), Some(player), Some(team_id), Some(period), Some(strength)) = (
-      self.goal_number,
-      self.player.clone(),
-      self.team,
-      self.period,
-      self.strength,
-    ) {
-      if goal_number != 0 {
-        let team = get_abbreviated_name(team_id).unwrap();
-        Goal::new_as_opt(goal_number, player, team.to_owned(), period, strength)
-      } else {
-        None
-      }
+    if let (Some(player), Some(team_id), Some(period), Some(strength)) =
+      (self.player.clone(), self.team, self.period, self.strength)
+    {
+      Goal::new_as_opt(player, team_id, period, strength)
     } else {
       None
     }

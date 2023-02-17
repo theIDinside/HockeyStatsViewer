@@ -9,8 +9,8 @@ use reqwest::Url;
 /// stack allocated, or behind 1 heap allocation (in a vector)
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct InternalGameInfo {
-  pub home: String,
-  pub away: String,
+  pub home: usize,
+  pub away: usize,
   pub gid: usize,
   pub date: CalendarDate,
 }
@@ -61,8 +61,8 @@ impl InternalGameInfo {
 
   pub fn new(home_team: String, away_team: String, game_id: usize, date: CalendarDate) -> InternalGameInfo {
     InternalGameInfo {
-      home: home_team,
-      away: away_team,
+      home: super::team::get_id(&home_team).expect(&format!("Failed to get id for team {}", home_team)),
+      away: super::team::get_id(&away_team).expect(&format!("Failed to get id for team {}", away_team)),
       gid: game_id,
       date,
     }
@@ -105,10 +105,10 @@ impl InternalGameInfo {
     )
   }
 
-  pub fn get_home_team(&self) -> &String {
-    &self.home
+  pub fn get_home_team(&self) -> usize {
+    self.home
   }
-  pub fn get_away_team(&self) -> &String {
-    &self.away
+  pub fn get_away_team(&self) -> usize {
+    self.away
   }
 }
