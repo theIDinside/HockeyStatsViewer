@@ -152,10 +152,24 @@ pub struct PowerPlays {
   pub home: PowerPlay,
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Player {
+  // player name
+  name: String,
+  // player id is: (team id, jersey)
+  id: (u8, u8),
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Assists {
+  first: Option<Player>,
+  second: Option<Player>,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Goal {
   /// Player name
-  player: String,
+  player: Player,
   /// Scoring team
   pub team: usize,
   /// Period & time in period
@@ -167,7 +181,7 @@ pub struct Goal {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DeserializeGoal {
   /// Player name
-  player: String,
+  player: Player,
   /// Scoring team
   pub team: usize,
   period: DeserializePeriod,
@@ -205,7 +219,7 @@ impl From<DeserializePeriod> for Period {
 }
 
 impl Goal {
-  pub fn new_as_opt(player: String, team: usize, period: Period, strength: GoalStrength) -> Option<Goal> {
+  pub fn new_as_opt(player: Player, team: usize, period: Period, strength: GoalStrength) -> Option<Goal> {
     Some(Goal {
       player,
       team,
@@ -221,7 +235,7 @@ impl Goal {
 
 #[derive(Debug)]
 pub struct GoalBuilder {
-  player: Option<String>,
+  player: Option<Player>,
   team: Option<usize>,
   period: Option<Period>,
   strength: Option<GoalStrength>,
@@ -238,7 +252,18 @@ impl GoalBuilder {
   }
 
   pub fn player(&mut self, player: String) {
-    self.player = Some(player);
+    let jersey_end = player
+      .find(' ')
+      .expect("Could not find name / jersey separator");
+    let name_end = player.find('(').unwrap_or(player.len());
+    let foo = "a";
+    let num = player[0..jersey_end]
+      .parse::<u8>()
+      .expect("failed to parse jersey number");
+    self.player = Some(Player {
+      name: player[jersey_end + 1..name_end].into(),
+      id: (self.team.unwrap() as u8, num),
+    });
   }
   pub fn team(&mut self, team: usize) {
     self.team = Some(team);
