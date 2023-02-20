@@ -75,19 +75,40 @@ impl Period {
   }
 }
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Deserialize)]
 pub enum GoalStrength {
-  Even,
-  EvenPenaltyShot,
-  PenaltyShot,
-  EvenEmptyNet,
-  PowerPlay,
-  ShortHanded,
-  ShortHandedEmptyNet,
-  ShortHandedPenaltyShot,
-  PowerPlayEmptyNet,
-  PowerPlayPenaltyShot,
-  Shootout,
+  Even = 0,
+  EvenPenaltyShot = 1,
+  PenaltyShot = 2,
+  EvenEmptyNet = 3,
+  PowerPlay = 4,
+  ShortHanded = 5,
+  ShortHandedEmptyNet = 6,
+  ShortHandedPenaltyShot = 7,
+  PowerPlayEmptyNet = 8,
+  PowerPlayPenaltyShot = 9,
+  Shootout = 10,
+}
+
+impl Serialize for GoalStrength {
+  fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+  where
+    S: Serializer,
+  {
+    match self {
+      GoalStrength::Even => serializer.serialize_u8(0),
+      GoalStrength::EvenPenaltyShot => serializer.serialize_u8(1),
+      GoalStrength::PenaltyShot => serializer.serialize_u8(2),
+      GoalStrength::EvenEmptyNet => serializer.serialize_u8(3),
+      GoalStrength::PowerPlay => serializer.serialize_u8(4),
+      GoalStrength::ShortHanded => serializer.serialize_u8(5),
+      GoalStrength::ShortHandedEmptyNet => serializer.serialize_u8(6),
+      GoalStrength::ShortHandedPenaltyShot => serializer.serialize_u8(7),
+      GoalStrength::PowerPlayEmptyNet => serializer.serialize_u8(8),
+      GoalStrength::PowerPlayPenaltyShot => serializer.serialize_u8(9),
+      GoalStrength::Shootout => serializer.serialize_u8(10),
+    }
+  }
 }
 
 impl TryFrom<&String> for GoalStrength {
