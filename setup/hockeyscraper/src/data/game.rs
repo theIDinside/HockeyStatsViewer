@@ -1,5 +1,5 @@
 use super::gameinfo::InternalGameInfo;
-use super::stats::{DeserializeGoal, FaceOffs, GiveAways, Goal, PowerPlays, Score, Shots, TakeAways};
+use super::stats::{DeserializeGoal, FaceOffs, GiveAways, Goal, GoalBuilder, PowerPlays, Score, Shots, TakeAways};
 use crate::data::stats::PowerPlay;
 use crate::scrape::errors::BuilderError;
 /// S.E = self explanatory
@@ -27,6 +27,8 @@ pub struct IntermediateGame {
   give_aways: GiveAways,
   /// Face off win percentages
   face_offs: FaceOffs,
+  /// Missed penalty shots
+  missed_penalty_shots: Vec<Goal>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -47,6 +49,8 @@ pub struct Game {
   give_aways: GiveAways,
   /// Face off win percentages
   face_offs: FaceOffs,
+  /// Missed penalty shots
+  missed_penalty_shots: Vec<Goal>,
 }
 
 impl Game {
@@ -66,6 +70,7 @@ impl From<IntermediateGame> for Game {
       take_aways: g.take_aways,
       give_aways: g.give_aways,
       face_offs: g.face_offs,
+      missed_penalty_shots: g.missed_penalty_shots,
     }
   }
 }
@@ -139,6 +144,7 @@ pub struct GameBuilder {
   take_aways: ValueHolder<usize>,
   give_aways: ValueHolder<usize>,
   face_offs: ValueHolder<f32>,
+  missed_penalty_shots: Vec<Goal>,
 }
 
 impl GameBuilder {
@@ -153,20 +159,32 @@ impl GameBuilder {
       take_aways: ValueHolder { away: None, home: None },
       give_aways: ValueHolder { away: None, home: None },
       face_offs: ValueHolder { away: None, home: None },
+      missed_penalty_shots: vec![],
     }
+  }
+
+  pub fn add_missed_penalty_shot(&mut self, ps: GoalBuilder) {
+    self.missed_penalty_shots.push(
+      ps.finalize()
+        .expect("Failed to finalize non-goal (missed penalty shot)"),
+    );
   }
 
   pub fn game_info(&mut self, game_info: InternalGameInfo) {
     self.game_info = Some(game_info);
   }
 
-  pub fn add_goal(&mut self, goal: Goal) {
-    if let Some(ref mut goals) = self.goals {
-      goals.push(goal);
+  pub fn add_goal(&mut self, goal_builder: GoalBuilder) {
+    if goal_builder.was_ps_shot {
+      self.add_missed_penalty_shot(goal_builder);
     } else {
-      let mut goals = Vec::new();
-      goals.push(goal);
-      self.goals = Some(goals);
+      if let Some(ref mut goals) = self.goals {
+        goals.push(goal_builder.finalize().expect("Failed to finalize goal"));
+      } else {
+        let mut goals = Vec::new();
+        goals.push(goal_builder.finalize().expect("Failed to finalize goal"));
+        self.goals = Some(goals);
+      }
     }
   }
 
@@ -230,7 +248,7 @@ impl GameBuilder {
     }
   }
 
-  pub fn finalize(&self) -> Option<Game> {
+  pub fn finalize(self) -> Result<Game, BuilderError> {
     if let (
       Some(game_info),
       Some(goals),
@@ -250,7 +268,7 @@ impl GameBuilder {
       *&self.give_aways.as_give_aways(),
       *&self.face_offs.as_face_offs(),
     ) {
-      Some(Game {
+      Ok(Game {
         game_info: game_info.clone(),
         goals: goals.clone(),
         final_score,
@@ -259,9 +277,10 @@ impl GameBuilder {
         take_aways,
         give_aways,
         face_offs,
+        missed_penalty_shots: self.missed_penalty_shots,
       })
     } else {
-      None
+      Err(self.get_error())
     }
   }
 

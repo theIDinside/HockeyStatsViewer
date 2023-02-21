@@ -463,6 +463,9 @@ fn scrape_game(client: &reqwest::blocking::Client, game_info: &InternalGameInfo)
                       5 => {
                         goal_builder.player(nodestr);
                       }
+            6 | 7 => {
+              goal_builder.assist(nodestr);
+            }
                       _ => {}
                     }
                   });

@@ -2,6 +2,8 @@ use serde::ser::SerializeStruct;
 use serde::{Serialize, Serializer};
 use std::convert::TryFrom;
 
+use super::game::GameBuilder;
+
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct Time {
   minutes: u16,
@@ -160,12 +162,6 @@ pub struct Player {
   id: (u8, u8),
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct Assists {
-  first: Option<Player>,
-  second: Option<Player>,
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Goal {
   /// Player name
@@ -176,6 +172,8 @@ pub struct Goal {
   period: Period,
   /// Team strengths
   strength: GoalStrength,
+  /// Assists
+  assists: Vec<Player>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -187,6 +185,8 @@ pub struct DeserializeGoal {
   period: DeserializePeriod,
   /// Team strengths
   strength: GoalStrength,
+  /// Assists
+  assists: Vec<Player>,
 }
 
 impl From<DeserializeGoal> for Goal {
@@ -196,6 +196,7 @@ impl From<DeserializeGoal> for Goal {
       team: g.team,
       period: Period::from(g.period),
       strength: g.strength,
+      assists: g.assists,
     }
   }
 }
@@ -219,12 +220,19 @@ impl From<DeserializePeriod> for Period {
 }
 
 impl Goal {
-  pub fn new_as_opt(player: Player, team: usize, period: Period, strength: GoalStrength) -> Option<Goal> {
+  pub fn new_as_opt(
+    player: Player,
+    team: usize,
+    period: Period,
+    strength: GoalStrength,
+    assists: Vec<Player>,
+  ) -> Option<Goal> {
     Some(Goal {
       player,
       team,
       period,
       strength,
+      assists,
     })
   }
 
@@ -239,6 +247,8 @@ pub struct GoalBuilder {
   team: Option<usize>,
   period: Option<Period>,
   strength: Option<GoalStrength>,
+  assists: Vec<Player>,
+  pub was_ps_shot: bool,
 }
 
 impl GoalBuilder {
@@ -248,22 +258,55 @@ impl GoalBuilder {
       team: None,
       period: None,
       strength: None,
+      assists: vec![],
+      was_ps_shot: false,
+    }
+  }
+
+  pub fn was_unsuccessful_penalty_shot(&mut self) {
+    self.was_ps_shot = true;
+  }
+
+  fn make_player(team: usize, player_string: &String) -> Option<Player> {
+    if player_string.len() < 3 || player_string == "unassisted" {
+      None
+    } else {
+      let jersey_end = player_string
+        .find(' ')
+        .expect("Could not find name / jersey separator");
+      let name_end = player_string.find('(').unwrap_or(player_string.len());
+      let num = player_string[0..jersey_end]
+        .parse::<u8>()
+        .expect("failed to parse jersey number");
+      Some(Player {
+        name: player_string[jersey_end + 1..name_end].into(),
+        id: (team as u8, num),
+      })
+    }
+  }
+
+  #[inline(always)]
+  fn was_ps(&self) -> bool {
+    match &self.strength.unwrap() {
+      GoalStrength::EvenPenaltyShot
+      | GoalStrength::PenaltyShot
+      | GoalStrength::ShortHandedPenaltyShot
+      | GoalStrength::PowerPlayPenaltyShot
+      | GoalStrength::Shootout => true,
+      _ => false,
+    }
+  }
+
+  pub fn assist(&mut self, player: String) {
+    if !self.was_ps() {
+      if let Some(p) = GoalBuilder::make_player(self.team.unwrap(), &player) {
+        self.assists.push(p);
+      }
     }
   }
 
   pub fn player(&mut self, player: String) {
-    let jersey_end = player
-      .find(' ')
-      .expect("Could not find name / jersey separator");
-    let name_end = player.find('(').unwrap_or(player.len());
-    let foo = "a";
-    let num = player[0..jersey_end]
-      .parse::<u8>()
-      .expect("failed to parse jersey number");
-    self.player = Some(Player {
-      name: player[jersey_end + 1..name_end].into(),
-      id: (self.team.unwrap() as u8, num),
-    });
+    self.player = GoalBuilder::make_player(self.team.unwrap(), &player);
   }
   pub fn team(&mut self, team: usize) {
     self.team = Some(team);
@@ -275,11 +318,11 @@ impl GoalBuilder {
     self.strength = Some(strength);
   }
 
-  pub fn finalize(&self) -> Option<Goal> {
+  pub fn finalize(self) -> Option<Goal> {
     if let (Some(player), Some(team_id), Some(period), Some(strength)) =
       (self.player.clone(), self.team, self.period, self.strength)
     {
-      Goal::new_as_opt(player, team_id, period, strength)
+      Goal::new_as_opt(player, team_id, period, strength, self.assists)
     } else {
       None
     }
