@@ -402,91 +402,65 @@ fn scrape_game(client: &reqwest::blocking::Client, game_info: &InternalGameInfo)
         }
       })
   }
-  game_doc
-    .find(gs_table_predicate)
-    .enumerate()
-    .for_each(|(i, node)| {
-      match i {
-        /* Goal summary table */
-        9 => {
-          node
-            .find(Name("tr"))
-            .enumerate()
-            .for_each(|(idx, tr_node)| {
-              let mut goal_builder = GoalBuilder::new();
-              if idx > 0 {
-                let mut period = String::new();
-
-                tr_node
-                  .find(Name("td"))
-                  .enumerate()
-                  .for_each(|(td_index, goal_node)| {
-                    let nodestr = goal_node.text().trim().to_owned();
-                    match td_index {
-                      1 => {
-                        period = nodestr;
-                      }
-                      2 => {
-                        if period == "SO" {
-                          let p = Period::new(&period, None).expect("Could not parse period");
-                          goal_builder.period(p);
-                        } else {
-                          let time_components: Vec<&str> = nodestr.split(":").collect();
-                          let (min, sec) = (
-                            time_components[0]
-                              .parse::<u16>()
-                              .expect(format!("Could not parse minutes: {}", nodestr).as_ref()),
-                            time_components[1]
-                              .parse::<u16>()
-                              .expect("Could not parse seconds"),
-                          );
-                          let time = Time::new(min, sec);
-                          let p = Period::new(&period, Some(time)).expect("Could not parse period");
-                          goal_builder.period(p)
-                        }
-                      }
-                      3 => {
-                        if !goal_builder.is_shootout() {
-                          let strength = GoalStrength::try_from(&nodestr)
-                            .ok()
-                            .expect("Could not parse strength");
-                          goal_builder.strength(strength);
-                        } else {
-                          goal_builder.strength(GoalStrength::Shootout);
-                        }
-                      }
-                      4 => {
-                        let team_id = get_id(&nodestr)
-                          .expect(format!("Could not find a team with that name: {}", &nodestr).as_ref());
-                        goal_builder.team(team_id);
-                      }
-                      5 => {
-                        goal_builder.player(nodestr);
-                      }
-            6 | 7 => {
-              goal_builder.assist(nodestr);
+  // skip header table (1st)
+  for node in game_doc.find(gs_table_predicate).skip(9).take(1) {
+    // skip goals made header row (1st)
+    for tr_node in node.find(Name("tr")).skip(1) {
+      let mut goal_builder = GoalBuilder::new();
+      let mut period = String::new();
+      for (td_index, goal_node) in tr_node.find(Name("td")).enumerate() {
+        let nodestr = goal_node.text().trim().to_owned();
+        match td_index {
+          1 => {
+            period = nodestr;
+          }
+          2 => {
+            if period == "SO" {
+              let p = Period::new(&period, None).expect("Could not parse period");
+              goal_builder.period(p);
+            } else {
+              let time_components: Vec<&str> = nodestr.split(":").collect();
+              let (min, sec) = (
+                time_components[0]
+                  .parse::<u16>()
+                  .expect(format!("Could not parse minutes: {}", nodestr).as_ref()),
+                time_components[1]
+                  .parse::<u16>()
+                  .expect("Could not parse seconds"),
+              );
+              let time = Time::new(min, sec);
+              let p = Period::new(&period, Some(time)).expect("Could not parse period");
+              goal_builder.period(p)
             }
-                      _ => {}
-                    }
-                  });
-                if let Some(goal) = goal_builder.finalize() {
-                  gb.add_goal(goal);
-                } else {
-                  /*
-                  if goal_builder.is_unsuccessful_ps() {
-                      println!("'Goal' stat was recorded for an unsuccessful penalty shot. Discarding data.");
-                  } else {
-                      println!("Error in goal builder. Data: {:?}", &goal_builder);
-                      panic!("Could not add goal stat");
-                  }
-                  */
-                }
-              }
-            });
+          }
+          3 => {
+            if !goal_builder.is_shootout() {
+              let strength = GoalStrength::try_from(&nodestr)
+                .ok()
+                .expect("Could not parse strength");
+              goal_builder.strength(strength);
+            } else {
+              goal_builder.strength(GoalStrength::Shootout);
+            }
+          }
+          4 => {
+            let team_id =
+              get_id(&nodestr).expect(format!("Could not find a team with that name: {}", &nodestr).as_ref());
+            goal_builder.team(team_id);
+          }
+          5 => {
+            goal_builder.player(nodestr);
+          }
+          6 | 7 => {
+            goal_builder.assist(nodestr);
+          }
+          _ => {}
         }
-        _ => {}
       }
-    });
+      gb.add_goal(goal_builder);
+    }
+  }
+
   gb.set_final_score();
   let mut penalty_summary = vec![String::from("TOT (PN-PIM)")];
   game_doc.find(Attr("id", "PenaltySummary")).for_each(|v| {
@@ -530,9 +504,6 @@ fn scrape_game(client: &reqwest::blocking::Client, game_info: &InternalGameInfo)
     .iter()
     .map(|index| penalty_summary.get(*index).unwrap().clone())
     .collect();
-
-  // println!("{:?}", penalty_summary);
-  // println!("Penalty summary: {:?}", penalty_summary);
 
   let (away_pp, home_pp) = process_pp_summary(&data);
   gb.power_plays(away_pp);
@@ -589,13 +560,7 @@ fn scrape_game(client: &reqwest::blocking::Client, game_info: &InternalGameInfo)
     .map(|(away, home)| Shots { away, home })
     .collect();
   gb.shots(shots);
-  let g_res = gb.finalize();
-
-  if let Some(game) = g_res {
-    Ok(game)
-  } else {
-    Err(gb.get_error())
-  }
+  gb.finalize()
 }
 
 pub fn scrape_game_results(thread_count: usize, games: &Vec<&InternalGameInfo>) -> Vec<ScrapeResults<Game>> {
