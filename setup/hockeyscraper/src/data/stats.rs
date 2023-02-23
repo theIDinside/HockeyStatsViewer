@@ -75,19 +75,40 @@ impl Period {
   }
 }
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Deserialize)]
 pub enum GoalStrength {
-  Even,
-  EvenPenaltyShot,
-  PenaltyShot,
-  EvenEmptyNet,
-  PowerPlay,
-  ShortHanded,
-  ShortHandedEmptyNet,
-  ShortHandedPenaltyShot,
-  PowerPlayEmptyNet,
-  PowerPlayPenaltyShot,
-  Shootout,
+  Even = 0,
+  EvenPenaltyShot = 1,
+  PenaltyShot = 2,
+  EvenEmptyNet = 3,
+  PowerPlay = 4,
+  ShortHanded = 5,
+  ShortHandedEmptyNet = 6,
+  ShortHandedPenaltyShot = 7,
+  PowerPlayEmptyNet = 8,
+  PowerPlayPenaltyShot = 9,
+  Shootout = 10,
+}
+
+impl Serialize for GoalStrength {
+  fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+  where
+    S: Serializer,
+  {
+    match self {
+      GoalStrength::Even => serializer.serialize_u8(0),
+      GoalStrength::EvenPenaltyShot => serializer.serialize_u8(1),
+      GoalStrength::PenaltyShot => serializer.serialize_u8(2),
+      GoalStrength::EvenEmptyNet => serializer.serialize_u8(3),
+      GoalStrength::PowerPlay => serializer.serialize_u8(4),
+      GoalStrength::ShortHanded => serializer.serialize_u8(5),
+      GoalStrength::ShortHandedEmptyNet => serializer.serialize_u8(6),
+      GoalStrength::ShortHandedPenaltyShot => serializer.serialize_u8(7),
+      GoalStrength::PowerPlayEmptyNet => serializer.serialize_u8(8),
+      GoalStrength::PowerPlayPenaltyShot => serializer.serialize_u8(9),
+      GoalStrength::Shootout => serializer.serialize_u8(10),
+    }
+  }
 }
 
 impl TryFrom<&String> for GoalStrength {
@@ -131,27 +152,39 @@ pub struct PowerPlays {
   pub home: PowerPlay,
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Player {
+  // player name
+  name: String,
+  // player id is: (team id, jersey)
+  id: (u8, u8),
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Goal {
   /// Player name
-  player: String,
+  player: Player,
   /// Scoring team
   pub team: usize,
   /// Period & time in period
   period: Period,
   /// Team strengths
   strength: GoalStrength,
+  /// Assists
+  assists: Vec<Player>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DeserializeGoal {
   /// Player name
-  player: String,
+  player: Player,
   /// Scoring team
   pub team: usize,
   period: DeserializePeriod,
   /// Team strengths
   strength: GoalStrength,
+  /// Assists
+  assists: Vec<Player>,
 }
 
 impl From<DeserializeGoal> for Goal {
@@ -161,6 +194,7 @@ impl From<DeserializeGoal> for Goal {
       team: g.team,
       period: Period::from(g.period),
       strength: g.strength,
+      assists: g.assists,
     }
   }
 }
@@ -184,12 +218,19 @@ impl From<DeserializePeriod> for Period {
 }
 
 impl Goal {
-  pub fn new_as_opt(player: String, team: usize, period: Period, strength: GoalStrength) -> Option<Goal> {
+  pub fn new_as_opt(
+    player: Player,
+    team: usize,
+    period: Period,
+    strength: GoalStrength,
+    assists: Vec<Player>,
+  ) -> Option<Goal> {
     Some(Goal {
       player,
       team,
       period,
       strength,
+      assists,
     })
   }
 
@@ -200,10 +241,12 @@ impl Goal {
 
 #[derive(Debug)]
 pub struct GoalBuilder {
-  player: Option<String>,
+  player: Option<Player>,
   team: Option<usize>,
   period: Option<Period>,
   strength: Option<GoalStrength>,
+  assists: Vec<Player>,
+  pub was_ps_shot: bool,
 }
 
 impl GoalBuilder {
@@ -213,11 +256,55 @@ impl GoalBuilder {
       team: None,
       period: None,
       strength: None,
+      assists: vec![],
+      was_ps_shot: false,
+    }
+  }
+
+  pub fn was_unsuccessful_penalty_shot(&mut self) {
+    self.was_ps_shot = true;
+  }
+
+  fn make_player(team: usize, player_string: &String) -> Option<Player> {
+    if player_string.len() < 3 || player_string == "unassisted" {
+      None
+    } else {
+      let jersey_end = player_string
+        .find(' ')
+        .expect("Could not find name / jersey separator");
+      let name_end = player_string.find('(').unwrap_or(player_string.len());
+      let num = player_string[0..jersey_end]
+        .parse::<u8>()
+        .expect("failed to parse jersey number");
+      Some(Player {
+        name: player_string[jersey_end + 1..name_end].into(),
+        id: (team as u8, num),
+      })
+    }
+  }
+
+  #[inline(always)]
+  fn was_ps(&self) -> bool {
+    match &self.strength.unwrap() {
+      GoalStrength::EvenPenaltyShot
+      | GoalStrength::PenaltyShot
+      | GoalStrength::ShortHandedPenaltyShot
+      | GoalStrength::PowerPlayPenaltyShot
+      | GoalStrength::Shootout => true,
+      _ => false,
+    }
+  }
+
+  pub fn assist(&mut self, player: String) {
+    if !self.was_ps() {
+      if let Some(p) = GoalBuilder::make_player(self.team.unwrap(), &player) {
+        self.assists.push(p);
+      }
     }
   }
 
   pub fn player(&mut self, player: String) {
-    self.player = Some(player);
+    self.player = GoalBuilder::make_player(self.team.unwrap(), &player);
   }
   pub fn team(&mut self, team: usize) {
     self.team = Some(team);
@@ -229,11 +316,11 @@ impl GoalBuilder {
     self.strength = Some(strength);
   }
 
-  pub fn finalize(&self) -> Option<Goal> {
+  pub fn finalize(self) -> Option<Goal> {
     if let (Some(player), Some(team_id), Some(period), Some(strength)) =
       (self.player.clone(), self.team, self.period, self.strength)
     {
-      Goal::new_as_opt(player, team_id, period, strength)
+      Goal::new_as_opt(player, team_id, period, strength, self.assists)
     } else {
       None
     }
