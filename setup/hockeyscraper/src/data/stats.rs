@@ -2,8 +2,6 @@ use serde::ser::SerializeStruct;
 use serde::{Serialize, Serializer};
 use std::convert::TryFrom;
 
-use super::game::GameBuilder;
-
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct Time {
   minutes: u16,
