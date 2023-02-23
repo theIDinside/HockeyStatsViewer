@@ -411,6 +411,9 @@ fn scrape_game(client: &reqwest::blocking::Client, game_info: &InternalGameInfo)
       for (td_index, goal_node) in tr_node.find(Name("td")).enumerate() {
         let nodestr = goal_node.text().trim().to_owned();
         match td_index {
+          0 if nodestr == "-" => {
+            goal_builder.was_unsuccessful_penalty_shot();
+          }
           1 => {
             period = nodestr;
           }
