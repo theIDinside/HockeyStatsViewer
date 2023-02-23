@@ -28,10 +28,10 @@ pub struct IntermediateGame {
   /// Face off win percentages
   face_offs: FaceOffs,
   /// Missed penalty shots
-  missed_penalty_shots: Vec<Goal>,
+  missed_penalty_shots: Vec<DeserializeGoal>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Clone)]
 pub struct Game {
   /// Holds game ID, home team ID, away team ID and CalendarDate for when it was played
   game_info: InternalGameInfo,
@@ -70,7 +70,7 @@ impl From<IntermediateGame> for Game {
       take_aways: g.take_aways,
       give_aways: g.give_aways,
       face_offs: g.face_offs,
-      missed_penalty_shots: g.missed_penalty_shots,
+      missed_penalty_shots: g.missed_penalty_shots.into_iter().map(|g| Goal::from(g)).collect(),
     }
   }
 }

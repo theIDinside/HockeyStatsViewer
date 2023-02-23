@@ -173,7 +173,7 @@ fn main() {
     provided_path.canonicalize().unwrap().display()
   );
 
-  match write_league_to_file(construct_league(), Path::new("./assets/db/teams.db")) {
+  match write_league_to_file(construct_league(), &db_path.join("teams.db")) {
     Ok(bytes_written) => {
       println!("Wrote teams to DB file, {} bytes", bytes_written);
     }

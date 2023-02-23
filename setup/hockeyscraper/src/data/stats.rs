@@ -1,5 +1,6 @@
 use serde::ser::SerializeStruct;
-use serde::{Serialize, Serializer};
+use serde::{Serialize, Serializer, Deserialize};
+use serde::de::{Visitor};
 use std::convert::TryFrom;
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
@@ -75,7 +76,7 @@ impl Period {
   }
 }
 
-#[derive(Copy, Clone, Debug, Deserialize)]
+#[derive(Copy, Clone, Debug)]
 pub enum GoalStrength {
   Even = 0,
   EvenPenaltyShot = 1,
@@ -88,6 +89,42 @@ pub enum GoalStrength {
   PowerPlayEmptyNet = 8,
   PowerPlayPenaltyShot = 9,
   Shootout = 10,
+}
+
+struct GoalStrengthVisitor;
+
+impl<'de> Visitor<'de> for GoalStrengthVisitor {
+  type Value = GoalStrength;
+  fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+      formatter.write_str("an integer between 0 and 10 (inclusive)")
+  }
+
+  fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
+      where
+          E: serde::de::Error, {
+      match v {
+        0 =>  Ok(GoalStrength::Even),
+        1 =>  Ok(GoalStrength::EvenPenaltyShot),
+        2 =>  Ok(GoalStrength::PenaltyShot),
+        3 =>  Ok(GoalStrength::EvenEmptyNet),
+        4 =>  Ok(GoalStrength::PowerPlay),
+        5 =>  Ok(GoalStrength::ShortHanded),
+        6 =>  Ok(GoalStrength::ShortHandedEmptyNet),
+        7 =>  Ok(GoalStrength::ShortHandedPenaltyShot),
+        8 =>  Ok(GoalStrength::PowerPlayEmptyNet),
+        9 =>  Ok(GoalStrength::PowerPlayPenaltyShot),
+        10 => Ok(GoalStrength::Shootout),
+        _ => Err(E::custom(format!("value out of range [0..11]")))
+      }
+  }
+}
+
+impl<'de> Deserialize<'de> for GoalStrength {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de> {
+          deserializer.deserialize_u8(GoalStrengthVisitor)
+    }
 }
 
 impl Serialize for GoalStrength {
