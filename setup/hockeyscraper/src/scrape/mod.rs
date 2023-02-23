@@ -57,7 +57,12 @@ impl<'a> GameResults<'a> {
     let data = serde_json::to_string(&self.games).expect("Couldn't serialize game results data");
     match game_results.write_all(data.as_bytes()) {
       Ok(_) => {
-        println!("Successfully wrote serialized data to file");
+        println!(
+          "Successfully wrote serialized data to file {} bytes with {} new games. Total db: {} games",
+          data.as_bytes().len(),
+          self.scraped_games,
+          self.games.len()
+        );
       }
       Err(e) => {
         panic!("Could not write serialized data to file: {}", e);
@@ -218,12 +223,22 @@ impl<'a> GameResultScraper<'a> {
       .ok()
       .and_then(|bytes| {
         println!("read {} bytes from game results db", bytes);
-        serde_json::from_str::<Vec<IntermediateGame>>(&buf).ok()
+        let games_ = serde_json::from_str::<Vec<IntermediateGame>>(&buf);
+        match games_ {
+            Ok(games) =>{
+              println!("deserialized {} games", games.len());
+              Some(games)
+            },
+            Err(err) => {
+              println!("Could not deserialize games: {}", err);
+              None
+            },
+        }
       })
       .map(|games| games.into_iter().map(|g| Game::from(g)).collect())
       .unwrap_or(vec![]);
 
-    println!("All game infos are scraped & serialized to 1 file. Begin scraping of results...");
+    println!("De-serialized {} games", scraped_games.len());
     let today = chrono::Utc::now();
     let date_tuple = (today.day(), today.month(), today.year() as u32);
 
@@ -329,11 +344,7 @@ fn scrape_game(client: &reqwest::blocking::Client, game_info: &InternalGameInfo)
     }
     (_, _, Err(e)) => return Err(BuilderError::REQWEST(e)),
   };
-  /*
-          let game_html_data = client.get(&game_info.get_game_summary_url()).send()?.text()?;
-          let event_html_data = client.get(&game_info.get_event_summary_url()).send()?.text()?;
-          let shots_html_data = client.get(&game_info.get_shot_summary_url()).send()?.text()?;
-  */
+
   let evt_doc = Document::from(event_html_data.as_ref());
   let game_doc = Document::from(game_html_data.as_ref());
   let shots_doc = Document::from(shots_html_data.as_ref());
@@ -343,64 +354,60 @@ fn scrape_game(client: &reqwest::blocking::Client, game_info: &InternalGameInfo)
   let mut gb = GameBuilder::new();
   gb.game_info(game_info.clone());
 
-  let nodes: Vec<select::node::Node> = evt_doc
+  let event_nodes: Vec<select::node::Node> = evt_doc
     .find(evt_pred)
     .filter(|n| n.text().contains("TEAM TOTALS"))
     .map(|x| x.clone())
     .collect();
 
-  for (index, node) in nodes.iter().enumerate() {
-    node
-      .find(Name("td"))
-      .enumerate()
-      .skip(1)
-      .for_each(|(i, stat)| {
-        match i {
-          // 1 if index == 0 => gb.final_score(TeamValue::Away(stat.text().parse::<usize>().expect("Couldn't parse away score"))),
-          // 1 if index == 1 => gb.final_score(TeamValue::Home(stat.text().parse::<usize>().expect("Couldn't parse away score"))),
-          5 => {}  // PN (Number of Penalties)
-          6 => {}  // PIM (Penalty Infraction Minutes)
-          13 => {} // Shots
-          17 if index == 0 => gb.give_aways(TeamValue::Away(
-            stat
-              .text()
-              .parse::<usize>()
-              .expect("Could not parse give aways for away team"),
-          )), // GV Give aways
-          17 if index == 1 => gb.give_aways(TeamValue::Home(
-            stat
-              .text()
-              .parse::<usize>()
-              .expect("Could not parse give aways for home team"),
-          )),
-          18 if index == 0 => gb.take_aways(TeamValue::Away(
-            stat
-              .text()
-              .parse::<usize>()
-              .expect("Could not parse give aways for away team"),
-          )),
-          18 if index == 1 => gb.take_aways(TeamValue::Home(
-            stat
-              .text()
-              .parse::<usize>()
-              .expect("Could not parse give aways for home team"),
-          )),
-          22 if index == 0 => gb.face_offs(TeamValue::Away(
-            stat
-              .text()
-              .parse::<f32>()
-              .expect("Couldn't parse face off value for away team"),
-          )), // Faceoff win %
-          22 if index == 1 => gb.face_offs(TeamValue::Home(
-            stat
-              .text()
-              .parse::<f32>()
-              .expect("Couldn't parse face off value for home team"),
-          )),
-          // F% Faceoff win percentage
-          _ => {}
-        }
-      })
+  for (index, node) in event_nodes.iter().enumerate() {
+    for (i, stat) in node.find(Name("td")).enumerate().skip(1) {
+      match i {
+        // 1 if index == 0 => gb.final_score(TeamValue::Away(stat.text().parse::<usize>().expect("Couldn't parse away score"))),
+        // 1 if index == 1 => gb.final_score(TeamValue::Home(stat.text().parse::<usize>().expect("Couldn't parse away score"))),
+        5 => {}  // PN (Number of Penalties)
+        6 => {}  // PIM (Penalty Infraction Minutes)
+        13 => {} // Shots
+        17 if index == 0 => gb.give_aways(TeamValue::Away(
+          stat
+            .text()
+            .parse::<usize>()
+            .expect("Could not parse give aways for away team"),
+        )), // GV Give aways
+        17 if index == 1 => gb.give_aways(TeamValue::Home(
+          stat
+            .text()
+            .parse::<usize>()
+            .expect("Could not parse give aways for home team"),
+        )),
+        18 if index == 0 => gb.take_aways(TeamValue::Away(
+          stat
+            .text()
+            .parse::<usize>()
+            .expect("Could not parse give aways for away team"),
+        )),
+        18 if index == 1 => gb.take_aways(TeamValue::Home(
+          stat
+            .text()
+            .parse::<usize>()
+            .expect("Could not parse give aways for home team"),
+        )),
+        22 if index == 0 => gb.face_offs(TeamValue::Away(
+          stat
+            .text()
+            .parse::<f32>()
+            .expect("Couldn't parse face off value for away team"),
+        )), // Faceoff win %
+        22 if index == 1 => gb.face_offs(TeamValue::Home(
+          stat
+            .text()
+            .parse::<f32>()
+            .expect("Couldn't parse face off value for home team"),
+        )),
+        // F% Faceoff win percentage
+        _ => {}
+      }
+    }
   }
   // skip header table (1st)
   for node in game_doc.find(gs_table_predicate).skip(9).take(1) {
@@ -515,11 +522,9 @@ fn scrape_game(client: &reqwest::blocking::Client, game_info: &InternalGameInfo)
   let shots_table = shots_doc.find(Attr("id", "ShotsSummary")).next().unwrap();
   let mut home_shots = Vec::new();
   let mut away_shots = Vec::new();
-  shots_table
-    .find(Name("table"))
-    .enumerate()
-    .for_each(|(table_index, node)| {
-      if table_index == 3 {
+  for (table_index, node) in shots_table.find(Name("table")).enumerate().skip(3).take(6) {
+    match table_index {
+      3 => {
         let data = node.text();
         let s: Vec<&str> = data.lines().filter(|line| line.len() != 0).collect();
         let mut periods = Vec::new();
@@ -537,7 +542,8 @@ fn scrape_game(client: &reqwest::blocking::Client, game_info: &InternalGameInfo)
             away_shots.push(_shots);
           }
         }
-      } else if table_index == 8 {
+      }
+      8 => {
         let data = node.text();
         let s: Vec<&str> = data.lines().filter(|line| line.len() != 0).collect();
         let mut periods = Vec::new();
@@ -555,7 +561,9 @@ fn scrape_game(client: &reqwest::blocking::Client, game_info: &InternalGameInfo)
           }
         }
       }
-    });
+      _ => {}
+    }
+  }
 
   let shots: Vec<Shots> = away_shots
     .into_iter()
